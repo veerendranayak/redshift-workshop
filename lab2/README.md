@@ -4,7 +4,6 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 
 ## Contents
 * [Before You Begin](#before-you-begin)
-* [Cloud Formation](#cloud-formation)
 * [Create Tables](#create-tables)
 * [Loading Data](#loading-data)
 * [Table Maintenance - ANALYZE](#table-maintenance---analyze)
@@ -13,7 +12,7 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 * [Before You Leave](#before-you-leave)
 
 ## Before You Begin
-This lab assumes you have launched a Redshift cluster and can gather the following information.  If you have not launched a cluster, see [LAB 1 - Creating Redshift Clusters](../lab1/README.md).
+This lab assumes you have a Redshift cluster and can gather the following information.  
 * [Your-AWS_Account_Id]
 * [Your-Redshift_Hostname]
 * [Your-Redshift_Port]
@@ -26,22 +25,8 @@ It also assumes you have access to a configured client tool. For more details on
 https://console.aws.amazon.com/redshift/home?#query:
 ```
 
-## Cloud Formation
-To *skip this lab* and complete the loading of this sample data into an **existing cluster** using cloud formation, use the following link.
-
-[![Launch](../images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=ImmersionLab2&templateURL=https://s3-us-west-2.amazonaws.com/redshift-immersionday-labs/lab2.yaml)
-
-To *skip this lab* and complete the loading of this sample data into a **new cluster** using cloud formation, use the following link.
-
-[![Launch](../images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=ImmersionLab2&templateURL=https://s3-us-west-2.amazonaws.com/redshift-immersionday-labs/lab2+cluster.yaml)
-
-Note: These cloud formation templates will create a Lambda function which will trigger an asynchronous Glue Python Shell script.  The Glue script assumes that the Redshift Cluster is publically accessible with an ingress rule of 0.0.0.0/0.  To monitor the load process and diagnose any load errors, see the following Cloudwatch Logs stream:
-```
-https://console.aws.amazon.com/cloudwatch/home?#logStream:group=/aws-glue/python-jobs/output
-```
-
 ## Create Tables
-Copy the following create table statements to create tables in the database.  
+In SQL Workbench, Copy the following create table statements to create tables in the database.  
 ```
 DROP TABLE IF EXISTS partsupp;
 DROP TABLE IF EXISTS lineitem;

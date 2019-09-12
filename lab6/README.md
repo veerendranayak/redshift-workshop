@@ -11,7 +11,7 @@ In this lab, we step through some common operations a Redshift Administrator may
 * [Before You Leave](#before-you-leave)
 
 ## Before You Begin
-This lab assumes you have launched a Redshift cluster.  If you have not launched a cluster, see [LAB 1 - Creating Redshift Clusters](../lab1/README.md).
+This lab assumes you have a Redshift cluster.  
 
 ## Event Subscriptions
 1. Navigate to your Redshift Events page.  Notice the *Events* involved with creating the cluster.  

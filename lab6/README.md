@@ -101,5 +101,3 @@ Note: This portion of the lab will take ~15 minutes to complete based on the dat
 4. When the operation completes, you'll see the Cluster Status of *available* again.
 <table><tr><td><img src=../images/Resize_3.png></td></tr></table>
 
-## Before You Leave
-If you are done using your cluster, please think about decommissioning it to avoid having to pay for unused resources.

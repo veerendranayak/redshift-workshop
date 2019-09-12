@@ -5,7 +5,6 @@ In this lab you will install JDBC tool and setup connectivity .
 * [Download and Install Client Tool](#Download-and-Install-Client-Tool)
 * [Configure Client Tool](#configure-client-tool)
 * [Run Sample Query](#run-sample-query)
-* [Before You Leave](#before-you-leave)
 
 
 ## Download and Install Client Tool
@@ -40,6 +39,3 @@ select * from pg_user
 ```
 * If you receive the following results, you have established connectivity and this lab is complete.  
 ![](../images/Users.png)
-
-## Before You Leave
-If you are done using your cluster, please think about decommissioning it to avoid having to pay for unused resources.

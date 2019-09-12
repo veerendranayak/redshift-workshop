@@ -16,6 +16,4 @@ Amazon Redshift is a fast, fully managed, petabyte-scale data warehouse solution
 |7 | [Amazon Redshift Operations](lab7/README.md) | Step through some common operations a Redshift Administrator may have to do to maintain their Redhshift environment including Event Subscriptions, Cluster Encryption, Cross Region Snapshots, and Elastic Resize |
 |8 | [Querying Nested JSON](lab8/README.md)| Query Nested JSON datatypes (array, struct, map) and load nested data types into flattened structures. |
 
-## License Summary
 
-This sample code is made available under the MIT-0 license. See the LICENSE file.

@@ -12,13 +12,6 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 * [Before You Leave](#before-you-leave)
 
 ## Before You Begin
-This lab assumes you have a Redshift cluster and can gather the following information.  
-* [Your-AWS_Account_Id]
-* [Your-Redshift_Hostname]
-* [Your-Redshift_Port]
-* [Your-Redshift_Username]
-* [Your-Redshift_Password]
-* [Your-Redshift-Role]
 
 It also assumes you have access to a configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```

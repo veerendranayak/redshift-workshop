@@ -2,16 +2,13 @@
 In this lab you will install JDBC tool and setup connectivity .
 
 ## Contents
-* [Prerequisites](#prerequisites)
-* [Cloud Formation](#cloud-formation)
-* [Configure Security](#configure-security)
-* [Launch Redshift Cluster ](#launch-redshift-cluster)
+* [Download and Install Client Tool](#Download-and-Install-Client-Tool)
 * [Configure Client Tool](#configure-client-tool)
 * [Run Sample Query](#run-sample-query)
 * [Before You Leave](#before-you-leave)
 
 
-## Download and Install Client Tool - SQL Workbench/J
+## Download and Install Client Tool
 * While Amazon Redshift does provide a web-based [Query editor](https://console.aws.amazon.com/redshift/home?#query:) for executing simple queries which complete in under 3 minutes, for these labs, it is recommended you install a third-party tool.We will use SQL Workbench/J
 
 * Download and install current stable version (Build 125) from --> [SQL Workbench/J](http://www.sql-workbench.net) on your laptop

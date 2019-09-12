@@ -7,7 +7,8 @@ Amazon Redshift is a fast, fully managed, petabyte-scale data warehouse solution
 ## Labs
 |# |Lab Name |Lab Description |
 |---- |---- | ----|
-|1 |[Creating Redshift Clusters](lab1/README.md) |Cluster setup and connectivity with SQL Workbench/J |
+|1 |[SQL Editor](lab1/README.md) | connectivity with SQL Workbench/J |
+|Optional |[Creating Redshift Clusters](lab1/README.md) |Cluster setup and connectivity with SQL Workbench/J |
 |2 |[Data Loading](lab2/README.md) |Table creation, data load, and table maintenance |
 |3 |[Table Design & Query Tuning](lab3/README.md) |Setting distribution and sort keys, deep copy, explain plans, system table queries |
 |4 |[Modernize Your Data Warehouse with Amazon Redshift Spectrum](lab4/README.md) |Query petabytes of data in your data warehouse and exabytes of data in your S3 data lake, using Redshift Spectrum |

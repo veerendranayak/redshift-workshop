@@ -4,12 +4,12 @@ This GitHub project provides a series of lab exercises which help users get star
 ## Goals
 Amazon Redshift is a fast, fully managed, petabyte-scale data warehouse solution that uses columnar storage to minimise IO, provides high data compression rates, and offers fast performance. This GitHub project provides a series of lab exercises which help users get started using the Redshift platform.  It also helps demonstrate the many features built into the platform.
 
-As part of Lab Setup, we have created Redshift cluster in each of the accounts. So we will start with configuring the JDBC connectivity to Redshift in Lab1.
+As part of Lab Setup, we have created Redshift cluster in each of the accounts. So we will start with configuring JDBC connectivity to Redshift in Lab1.
 
 ## Labs
 |# |Lab Name |Lab Description |
 |---- |---- | ----|
-|1 |[SQL Editor](lab1/README.md) | connectivity with SQL Workbench/J |
+|1 |[Configuring JDBC connectivity](lab1/README.md) | connectivity with SQL Workbench/J |
 |Optional |[Creating Redshift Clusters](lab1/README.md) |Cluster setup and connectivity with SQL Workbench/J |
 |2 |[Data Loading](lab2/README.md) |Table creation, data load, and table maintenance |
 |3 |[Table Design & Query Tuning](lab3/README.md) |Setting distribution and sort keys, deep copy, explain plans, system table queries |

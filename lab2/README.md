@@ -193,14 +193,16 @@ You should run the VACUUM command following a significant number of deletes or u
 
 Capture the initial space usage of the ORDERS table.
 ```
-select col, count(*)
-from stv_blocklist, stv_tbl_perm
-where stv_blocklist.tbl = stv_tbl_perm.id and
-stv_blocklist.slice = stv_tbl_perm.slice and
-stv_tbl_perm.name = 'orders' and
-col <= 5
-group by col
-order by col;
+SELECT
+  TRIM(name) as table_name,
+  TRIM(pg_attribute.attname) AS column_name,col,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1, 2,3;
 ```
 |col|count|
 |---|---|
@@ -218,14 +220,16 @@ delete orders where o_orderdate between '1992-01-01' and '1993-01-01';
 
 Confirm that Redshift did not automatically reclaim space by running the following query again and noting the values have not changed.
 ```
-select col, count(*)
-from stv_blocklist, stv_tbl_perm
-where stv_blocklist.tbl = stv_tbl_perm.id
-and stv_blocklist.slice = stv_tbl_perm.slice
-and stv_tbl_perm.name = 'orders' and
-col <= 5
-group by col
-order by col;
+SELECT
+  TRIM(name) as table_name,
+  TRIM(pg_attribute.attname) AS column_name,col,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1, 2,3;
 
 ```
 
@@ -236,14 +240,16 @@ vacuum delete only orders;
 
 Confirm that the VACUUM command reclaimed space by running the follwoing quer again and noting the values have changed.
 ```
-select col, count(*)
-from stv_blocklist, stv_tbl_perm
-where stv_blocklist.tbl = stv_tbl_perm.id
-and stv_blocklist.slice = stv_tbl_perm.slice
-and stv_tbl_perm.name = 'orders' and
-col <= 5
-group by col
-order by col;
+SELECT
+  TRIM(name) as table_name,
+  TRIM(pg_attribute.attname) AS column_name,col,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1, 2,3;
 ```
 |col|count|
 |---|---|

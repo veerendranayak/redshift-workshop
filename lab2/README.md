@@ -194,15 +194,16 @@ You should run the VACUUM command following a significant number of deletes or u
 Capture the initial space usage of the ORDERS table.
 ```
 SELECT
-  TRIM(name) as table_name,
-  TRIM(pg_attribute.attname) AS column_name,col,
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
   count(blocknum)
 FROM
   svv_diskusage JOIN pg_attribute ON
     svv_diskusage.col = pg_attribute.attnum-1 AND
     svv_diskusage.tbl = pg_attribute.attrelid
     where TRIM(name)='orders'
-GROUP BY 1, 2,3;
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
 ```
 |col|count|
 |---|---|
@@ -221,16 +222,16 @@ delete orders where o_orderdate between '1992-01-01' and '1993-01-01';
 Confirm that Redshift did not automatically reclaim space by running the following query again and noting the values have not changed.
 ```
 SELECT
-  TRIM(name) as table_name,
-  TRIM(pg_attribute.attname) AS column_name,col,
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
   count(blocknum)
 FROM
   svv_diskusage JOIN pg_attribute ON
     svv_diskusage.col = pg_attribute.attnum-1 AND
     svv_diskusage.tbl = pg_attribute.attrelid
     where TRIM(name)='orders'
-GROUP BY 1, 2,3;
-
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
 ```
 
 Run the VACUUM command
@@ -241,15 +242,16 @@ vacuum delete only orders;
 Confirm that the VACUUM command reclaimed space by running the follwoing quer again and noting the values have changed.
 ```
 SELECT
-  TRIM(name) as table_name,
-  TRIM(pg_attribute.attname) AS column_name,col,
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
   count(blocknum)
 FROM
   svv_diskusage JOIN pg_attribute ON
     svv_diskusage.col = pg_attribute.attnum-1 AND
     svv_diskusage.tbl = pg_attribute.attrelid
     where TRIM(name)='orders'
-GROUP BY 1, 2,3;
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
 ```
 |col|count|
 |---|---|

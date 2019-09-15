@@ -256,19 +256,19 @@ FROM
 GROUP BY 1,2,3
 ORDER BY 1,2,3;
 ```
-table_name|col|column_name|count
-orders|0|o_orderkey|360
-orders|1|o_custkey|336
-orders|2|o_orderstatus|24
-orders|3|o_totalprice|408
-orders|4|o_orderdate|312
-orders|5|o_orderpriority|208
-orders|6|o_clerk|440
-orders|7|o_shippriority|24
-orders|8|o_comment|1552
 
+|table_name|col|column_name|count|
+|---|---|---|---|
+|orders|0|o_orderkey|704|
+|orders|1|o_custkey|656|
+|orders|2|o_orderstatus|32|
+|orders|3|o_totalprice|800|
+|orders|4|o_orderdate|608|
+|orders|5|o_orderpriority|400|
+|orders|6|o_clerk|864|
+|orders|7|o_shippriority|32|
+|orders|8|o_comment|3088|
 
-Note:  If you have a table with very few columns but a very large number of rows, the three hidden metadata identify columns (INSERT_XID, DELETE_XID, ROW_ID) will consume a disproportionate amount of the disk space for the table.  In order to optimize compression of the hidden columns, load the table in a single copy transaction where possible.  If you load the table with multiple separate COPY commands, the INSERT_XID column will not compress well and multiple vacuum operations will not improve compression of INSERT_XID.
 
 ## Troubleshooting Loads
 There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:

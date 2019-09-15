@@ -205,16 +205,17 @@ FROM
 GROUP BY 1,2,3
 ORDER BY 1,2,3;
 ```
-table_name|col|column_name|count
-orders|0|o_orderkey|704
-orders|1|o_custkey|656
-orders|2|o_orderstatus|32
-orders|3|o_totalprice|800
-orders|4|o_orderdate|608
-orders|5|o_orderpriority|400
-orders|6|o_clerk|864
-orders|7|o_shippriority|32
-orders|8|o_comment|3088
+
+table_name|col|column_name|count|
+orders|0|o_orderkey|704|
+orders|1|o_custkey|656|
+orders|2|o_orderstatus|32|
+orders|3|o_totalprice|800|
+orders|4|o_orderdate|608|
+orders|5|o_orderpriority|400|
+orders|6|o_clerk|864|
+orders|7|o_shippriority|32|
+orders|8|o_comment|3088|
 
 Delete rows from the ORDERS table.
 ```

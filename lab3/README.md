@@ -199,7 +199,7 @@ LIMIT 3;
  
 ## Distributing and Sorting
 ### Distributing Data
-One of the key features enabling Redshift’s scale is the possibility to slice the data dynamically across nodes, this can be done evenly or in a round-robin fashion (this is done by default), by a distribution key (or column) or an all distribution which puts all data in all slices.  These options give you the ability to spread out data on a cluster in distribution that can maximize the parallelization potential of the queries.
+One of the key features enabling Redshift’s scale is the possibility to slice the data dynamically across nodes, this can be done evenly or in a round-robin fashion , by a distribution key (or column) or an all distribution which puts all data in all slices .  These options give you the ability to spread out data on a cluster in distribution that can maximize the parallelization potential of the queries.
 To help queries run fast, it is recommended to use as a distribution that will be used in regularly joined tables, allowing Redshift to co-locate the data of these different entities, reducing IO and network exchanges.   We will explore different distribution methods and what it does to the data and query performance.
 Redshift also uses a specific Sort Column to know in advance what values of a column are in a given block, and to skip reading that entire block if the values it contains don’t fall into the range of a query.
 In this sample, queries are based on customer related information (region), making the customer key a good fit for distribution key, and the filters are made on order date ranges, so using it as a sort key helps execution.

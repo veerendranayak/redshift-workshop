@@ -207,15 +207,15 @@ ORDER BY 1,2,3;
 ```
 |table_name|col|column_name|count|
 |---|---|---|---|
-|orders|0|o_orderkey|704|
-|orders|1|o_custkey|656|
-|orders|2|o_orderstatus|32|
-|orders|3|o_totalprice|800|
-|orders|4|o_orderdate|608|
-|orders|5|o_orderpriority|400|
-|orders|6|o_clerk|864|
-|orders|7|o_shippriority|32|
-|orders|8|o_comment|3088|
+|orders|0|o_orderkey|360|
+|orders|1|o_custkey|336|
+|orders|2|o_orderstatus|24|
+|orders|3|o_totalprice|408|
+|orders|4|o_orderdate|312|
+|orders|5|o_orderpriority|208|
+|orders|6|o_clerk|440|
+|orders|7|o_shippriority|24|
+|orders|8|o_comment|1552|
 
 Delete rows from the ORDERS table.
 ```
@@ -259,16 +259,15 @@ ORDER BY 1,2,3;
 
 |table_name|col|column_name|count|
 |---|---|---|---|
-|orders|0|o_orderkey|608|
-|orders|1|o_custkey|560|
-|orders|2|o_orderstatus|32|
-|orders|3|o_totalprice|688|
-|orders|4|o_orderdate|528|
-|orders|5|o_orderpriority|352|
-|orders|6|o_clerk|736|
-|orders|7|o_shippriority|32|
-|orders|8|o_comment|2624|
-
+|orders|0|o_orderkey|312|
+|orders|1|o_custkey|288|
+|orders|2|o_orderstatus|24|
+|orders|3|o_totalprice|352|
+|orders|4|o_orderdate|272|
+|orders|5|o_orderpriority|184|
+|orders|6|o_clerk|376|
+|orders|7|o_shippriority|24|
+|orders|8|o_comment|1320|
 
 ## Troubleshooting Loads
 There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:

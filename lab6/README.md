@@ -1,4 +1,4 @@
-# Lab 7 - Amazon Redshift Operations
+# Lab 6 - Amazon Redshift Operations
 
 In this lab, we step through some common operations a Redshift Administrator may have to do to maintain their Redhshift environment.
 

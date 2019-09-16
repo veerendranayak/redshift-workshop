@@ -89,7 +89,7 @@ DATEFORMAT 'auto'
 IGNOREHEADER 1
 DELIMITER ','
 IGNOREBLANKLINES
-; --16 secs approx. run time
+; /* 16 secs approx. run time */
 ```
 </p>
 </details>

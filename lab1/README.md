@@ -8,7 +8,7 @@ In this lab you will install JDBC tool and setup connectivity .
 
 
 ## Download and Install Client Tool
-* While Amazon Redshift does provide a web-based [Query editor](https://console.aws.amazon.com/redshift/home?#query:) for executing simple queries which complete in under 3 minutes, for these labs, it is recommended you install a third-party tool.We will use SQL Workbench/J
+* While Amazon Redshift does provide a web-based [Query editor](https://console.aws.amazon.com/redshift/home?#query:) for executing simple queries, for these labs, it is recommended you install a third-party tool.We will use SQL Workbench/J
 
 * Download and install from link --> [SQL Workbench/J](http://www.sql-workbench.eu/downloads.html). Select "Generic package for all systems including all optional libraries"
 

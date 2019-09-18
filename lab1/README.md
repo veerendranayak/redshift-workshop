@@ -12,9 +12,7 @@ In this lab you will install JDBC tool and setup connectivity .
 
 * Download and install from link --> [SQL Workbench/J](http://www.sql-workbench.eu/downloads.html). Select "Generic package for all systems including all optional libraries"
 
-* Once you have installed your third-party tool, you will need either a JDBC or ODBC driver.  Amazon Redshift offers JDBC and ODBC drivers for download. In this exercise we will JDBC driver that can be downloaded from [RedShift JDBC Documentation] (https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/1.2.34.1058/RedshiftJDBC42-no-awssdk-1.2.34.1058.jar)
-
-
+* Once you install SQL Workbench, you will need either a JDBC or ODBC driver.  Amazon Redshift offers JDBC and ODBC drivers for download. In this exercise we will use JDBC driver that can be downloaded from [RedShift JDBC Documentation] (https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/1.2.34.1058/RedshiftJDBC42-no-awssdk-1.2.34.1058.jar)
 
 ## Configure Client Tool
 

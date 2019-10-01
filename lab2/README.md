@@ -1,5 +1,5 @@
 # LAB 2 - Data Loading
-In this lab, you will use a set of eight tables based on the TPC Benchmark data model.  You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  
+In this lab, you will use a set of eight tables based on the TPC Benchmark data model. You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  
 ![](../images/Model.png)
 
 ## Contents
@@ -166,7 +166,7 @@ If you are using 4 dc2.large clusters nodes, the estimated time to load the data
 *	PARTSUPPLIER - (80M rows) 3m
 
 Note: A few key takeaways from the above COPY statements.
-1. COMPUPDATE PRESET ON will assign compression using the Amazon Redshift best practices related to the data type of the column but without analyzing the data in the table. 
+1. COMPUPDATE PRESET ON will assign compression using the Amazon Redshift best practices related to the data type of the column but without analyzing the data in the table.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
 1. COPY for the SUPPLIER table points a manifest file (supplier.json)
 

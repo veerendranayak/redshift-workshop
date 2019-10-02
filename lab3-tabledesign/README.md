@@ -13,6 +13,9 @@ In this lab you will analyze the affects of Compression, De-Normalization, Distr
 ## Before You Begin
 This lab assumes you have a Redshift cluster, loaded it with TPC Benchmark data and can gather the following information.  
 
+[Your-AWS_Account_Id]
+[Your-Redshift-Role]
+
 It also assumes you have access to a configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```
 https://console.aws.amazon.com/redshift/home?#query:
@@ -417,23 +420,23 @@ Redshift takes advantage of zone maps which allows the optimizer to skip reading
 ```
 select count(1), sum(o_totalprice)
 FROM orders_v3
-WHERE o_orderdate between '1992-07-05' and '1992-07-07'
+WHERE o_orderdate between '1993-07-05' and '1993-07-07'
 ```
 ```
 select count(1), sum(o_totalprice)
 FROM orders_v3
-WHERE o_orderdate between '1992-07-07' and '1992-07-09'
+WHERE o_orderdate between '1993-07-07' and '1993-07-09'
 ```
 7. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used. You will notice the second query takes significantly longer than the second query in the previous step even though the number of rows which were aggregated is similar.  This is due to the first query's ability to take advantage of the Sort Key defined on the table.
 ```
 select count(1), sum(o_totalprice)
 FROM orders_v3
-where o_orderkey < 600001
+where o_orderkey < 450001
 ```
 ```
 select count(1), sum(o_totalprice)
 FROM orders_v3
-where o_orderkey < 600002
+where o_orderkey < 451001
 ```
 
 ## Join Strategies

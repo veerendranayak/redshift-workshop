@@ -10,13 +10,13 @@ In this lab you will install JDBC tool and setup connectivity .
 ## Download and Install Client Tool
 * While Amazon Redshift does provide a web-based [Query editor](https://console.aws.amazon.com/redshift/home?#query:) for executing simple queries, for these labs, it is recommended you install a third-party tool. We will use SQL Workbench/J
 
-* Download and install from link --> [SQL Workbench/J](http://www.sql-workbench.eu/downloads.html). Select "Generic package for all systems including all optional libraries"
+* Download SQL Workbench from link --> [SQL Workbench/J](http://www.sql-workbench.eu/downloads.html). Select "Generic package for all systems including all optional libraries"
 
-* Once you install SQL Workbench, you will need either a JDBC or ODBC driver.  Amazon Redshift offers JDBC and ODBC drivers for download. In this exercise we will use JDBC driver that can be downloaded from [RedShift JDBC Documentation] (https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/1.2.34.1058/RedshiftJDBC42-no-awssdk-1.2.34.1058.jar)
+* Once you download SQL Workbench, you will need JDBC or ODBC driver. In this exercise we will use JDBC driver that can be downloaded from [RedShift JDBC Documentation] (https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/1.2.34.1058/RedshiftJDBC42-no-awssdk-1.2.34.1058.jar)
 
 ## Configure Client Tool
 
-* Launch SQL Workbench/J and navigate to [File | Manage Drivers].
+* Launch SQL Workbench/J (go to downloaded folder and open sqlworkbench.jar). Navigate to [File | Manage Drivers].
 * Select "Amazon Redshift" and set the driver Library location to where you downloaded the Redshift JDBC Driver. Click Ok.
 ![](../images/Library.png)
 * Navigate to [File | Connect Window] to create a new connection profile and modify the following settings and once complete click on the "Test Connection" button.
@@ -24,8 +24,8 @@ In this lab you will install JDBC tool and setup connectivity .
   * Driver - Amazon Redshift (com.amazon.redshift.jdbc.Driver)
   * URL - Find this by navigating to the [Cluster List](https://console.aws.amazon.com/redshift/home?cluster-details:#cluster-list:), selecting your cluster, and copying the JDBC URL.  
   ![](../images/JDBCUrl.png)
-  * Username - [Master user name] -- provided separately
-  * Password - [Master user password]  -- provided separately
+  * Username - awsuser
+  * Password - Shutterfly123
   * Autocommit - Enabled
 
 ![](../images/Connection.png)

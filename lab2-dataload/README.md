@@ -13,7 +13,12 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 
 ## Before You Begin
 
-It assumes you have access to a configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
+It assumes you have a Redshift cluster and can gather following information from AWS console.
+
+[Your-AWS_Account_Id]
+[Your-Redshift-Role]
+
+ It also assumes you have configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```
 https://console.aws.amazon.com/redshift/home?#query:
 ```
@@ -170,8 +175,12 @@ Note: A few key takeaways from the above COPY statements.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
 1. COPY for the SUPPLIER table points a manifest file (supplier.json)
 
-## Table Maintenance - Analyze
-You should at regular intervals, update the statistical metadata that the query planner uses to build and choose optimal plans.  You can analyze a table explicitly by running the ANALYZE command.  When you load data with the COPY command, you can perform an analysis on incrementally loaded data automatically by setting the STATUPDATE option to ON.  When loading into an empty table, the COPY command by default performs the ANALYZE operation.
+## Table Maintenance - Analyze (OPTIONAL)
+
+The ANALYZE operation updates the statistical metadata that the query planner uses to choose optimal plans.
+
+In most cases, you don't need to explicitly run the ANALYZE command. Amazon Redshift monitors changes to your workload and automatically updates statistics in the background.
+When you load data with the COPY command, you can perform an analysis on incrementally loaded data automatically by setting the STATUPDATE option to ON.  When loading into an empty table, the COPY command by default performs the ANALYZE operation.
 
 Run the ANALYZE command against the CUSTOMER table.
 ```
@@ -189,7 +198,7 @@ order by query desc;
 Note: Time timestamp of the ANALYZE will correlate to when the COPY command was executed and there will be no entry for the second analyze statement.  Redshift knows that it does not need to run the ANALYZE operation as no data has changed in the table.
 
 ## Table Maintenance - VACUUM
-You should run the VACUUM command following a significant number of deletes or updates.  To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  While, Amazon Redshift recently enabled a feature which automatically and periodically reclaims space, it is a good idea to be aware of how to manually perform this operation.  You can run a full vacuum, a delete only vacuum, or sort only vacuum.
+You should run the VACUUM command following a significant number of deletes or updates. To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  While, Amazon Redshift recently enabled a feature which automatically and periodically reclaims space, it is a good idea to be aware of how to manually perform this operation.  You can run a full vacuum, a delete only vacuum, or sort only vacuum.
 
 Capture the initial space usage of the ORDERS table.
 ```
@@ -305,6 +314,3 @@ where sl.tbl = sp.id);
 -- Query the LOADVIEW view to isolate the problem.
 select * from loadview where table_name='customer';
 ```
-
-## Before You Leave
-If you are done using your cluster, please think about decommissioning it to avoid having to pay for unused resources.

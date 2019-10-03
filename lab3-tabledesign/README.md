@@ -479,6 +479,3 @@ GROUP BY c_mktsegment, o_orderpriority;
 EXPLAIN
 SELECT * FROM region, nation
 ```
-
-## Before You Leave
-If you are done using your cluster, please think about decommissioning it to avoid having to pay for unused resources.

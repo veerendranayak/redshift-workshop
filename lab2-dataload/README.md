@@ -1,5 +1,5 @@
 # LAB 2 - Data Loading
-In this lab, you will use a set of eight tables based on the TPC Benchmark data model. You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  
+In this lab, you will use a set of eight tables based on the TPC Benchmark data model. You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  The focus will be on using auto settings of Redshift cluster.
 ![](../images/Model.png)
 
 ## Contents
@@ -13,10 +13,13 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 
 ## Before You Begin
 
-It assumes you have a Redshift cluster and can gather following information from AWS console.
+Navigate to AWS Console to get IAM Role ARN assigned to Redshift cluster.
 
-[Your-AWS_Account_Id]
-[Your-Redshift-Role]
+link -> [RedshiftCluster](https://us-west-2.console.aws.amazon.com/redshift/home?region=us-west-2#cluster-list:)
+
+Click on cluster name to view details
+
+(../images/RedshiftclusterARN.png)
 
  It also assumes you have configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```
@@ -39,14 +42,14 @@ CREATE TABLE region (
   R_REGIONKEY bigint NOT NULL PRIMARY KEY,
   R_NAME varchar(25),
   R_COMMENT varchar(152))
-diststyle all;
+;
 
 CREATE TABLE nation (
   N_NATIONKEY bigint NOT NULL PRIMARY KEY,
   N_NAME varchar(25),
   N_REGIONKEY bigint REFERENCES region(R_REGIONKEY),
   N_COMMENT varchar(152))
-diststyle all;
+;
 
 create table customer (
   C_CUSTKEY bigint NOT NULL PRIMARY KEY,
@@ -57,7 +60,7 @@ create table customer (
   C_ACCTBAL decimal(18,4),
   C_MKTSEGMENT varchar(10),
   C_COMMENT varchar(117))
-diststyle all;
+;
 
 create table orders (
   O_ORDERKEY bigint NOT NULL PRIMARY KEY,
@@ -69,8 +72,9 @@ create table orders (
   O_CLERK varchar(15),
   O_SHIPPRIORITY Integer,
   O_COMMENT varchar(79))
-distkey (O_ORDERKEY)
-sortkey (O_ORDERDATE);
+  distkey (O_ORDERKEY)
+  sortkey (O_ORDERDATE)
+;
 
 create table part (
   P_PARTKEY bigint NOT NULL PRIMARY KEY,
@@ -82,7 +86,7 @@ create table part (
   P_CONTAINER varchar(10),
   P_RETAILPRICE decimal(18,4),
   P_COMMENT varchar(23))
-diststyle all;
+;
 
 create table supplier (
   S_SUPPKEY bigint NOT NULL PRIMARY KEY,
@@ -92,7 +96,7 @@ create table supplier (
   S_PHONE varchar(15),
   S_ACCTBAL decimal(18,4),
   S_COMMENT varchar(101))
-diststyle all;                                                              
+;                                                              
 
 create table lineitem (
   L_ORDERKEY bigint NOT NULL REFERENCES orders(O_ORDERKEY),
@@ -113,7 +117,8 @@ create table lineitem (
   L_COMMENT varchar(44),
 PRIMARY KEY (L_ORDERKEY, L_LINENUMBER))
 distkey (L_ORDERKEY)
-sortkey (L_RECEIPTDATE);
+sortkey (L_RECEIPTDATE)
+;
 
 create table partsupp (
   PS_PARTKEY bigint NOT NULL REFERENCES part(P_PARTKEY),
@@ -122,42 +127,48 @@ create table partsupp (
   PS_SUPPLYCOST decimal(18,4),
   PS_COMMENT varchar(199),
 PRIMARY KEY (PS_PARTKEY, PS_SUPPKEY))
-diststyle even;
+;
 ```
+Notice that, we are not explicitly specifying distribution style.
+The default distribution style is AUTO.
+With AUTO, Amazon Redshift initially assigns ALL distribution to a small table, then changes the table to EVEN distribution when the table grows larger. The change in distribution occurs in the background, in a few seconds.
+
+Also, we will let Redshift Advisor generate customized recommendations by analyzing performance and usage metrics for your cluster. These tailored recommendations relate to operations and cluster settings. To help you prioritize your optimizations, Advisor ranks recommendations by order of impact.
+
 ## Loading Data
-A COPY command loads large amounts of data much more efficiently than using INSERT statements, and stores the data more effectively as well.  Use a single COPY command to load data for one table from multiple files.  Amazon Redshift then automatically loads the data in parallel.  For your convenience, the sample data you will use is available in a public Amazon S3 bucket. To ensure that  Redshift performs a compression analysis, set the COMPUPDATE parameter to ON in your COPY commands. To copy this data you will need to replace the [Your-AWS_Account_Id] and [Your-Redshift_Role] values in the script below.
+A COPY command loads large amounts of data much more efficiently than using INSERT statements, and stores the data more effectively as well.  Use a single COPY command to load data for one table from multiple files.  Amazon Redshift then automatically loads the data in parallel.  For your convenience, the sample data you will use is available in a public Amazon S3 bucket. To copy this data you will need to replace the [Your-Redshift-Role-ARN] values in the script below.
 
 ```
 COPY region FROM 's3://redshift-immersionday-labs/data/region/region.tbl.lzo'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 COPY nation FROM 's3://redshift-immersionday-labs/data/nation/nation.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy customer from 's3://redshift-immersionday-labs/data/customer/customer.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy orders from 's3://redshift-immersionday-labs/data/orders/orders.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy part from 's3://redshift-immersionday-labs/data/part/part.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy supplier from 's3://redshift-immersionday-labs/data/supplier/supplier.json' manifest
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy lineitem from 's3://redshift-immersionday-labs/data/lineitem/lineitem.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 
 copy partsupp from 's3://redshift-immersionday-labs/data/partsupp/partsupp.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
 ```
 If you are using 4 dc2.large clusters nodes, the estimated time to load the data is as follows, note you can check timing information on actions in the performance and query tabs on the redshift console:
@@ -197,8 +208,10 @@ order by query desc;
 ```
 Note: Time timestamp of the ANALYZE will correlate to when the COPY command was executed and there will be no entry for the second analyze statement.  Redshift knows that it does not need to run the ANALYZE operation as no data has changed in the table.
 
-## Table Maintenance - VACUUM
-You should run the VACUUM command following a significant number of deletes or updates. To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  While, Amazon Redshift recently enabled a feature which automatically and periodically reclaims space, it is a good idea to be aware of how to manually perform this operation.  You can run a full vacuum, a delete only vacuum, or sort only vacuum.
+## Table Maintenance - VACUUM DELETE ONLY- OPTIONAL
+Amazon Redshift automatically performs a DELETE ONLY vacuum in the background, so you rarely, if ever, need to run a DELETE ONLY vacuum.
+
+Below steps show you VACCUM operation, incase you want to do it manually. To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  
 
 Capture the initial space usage of the ORDERS table.
 ```
@@ -288,7 +301,7 @@ In addition, you can validate your data without actually loading the table.  Use
 Let’s try to load the CUSTOMER table with a different data file with mismatched columns.  To copy this data you will need to replace the [Your-AWS_Account_Id] and [Your-Redshift_Role] values in the script below.   
 ```
 COPY customer FROM 's3://redshift-immersionday-labs/data/nation/nation.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
+iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' noload;
 ```
 

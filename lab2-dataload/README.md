@@ -9,7 +9,6 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 * [Table Maintenance - ANALYZE](#table-maintenance---analyze)
 * [Table Maintenance - VACUUM](#table-maintenance---vacuum)
 * [Troubleshooting Loads](#troubleshooting-loads)
-* [Before You Leave](#before-you-leave)
 
 ## Before You Begin
 
@@ -19,7 +18,9 @@ link -> [RedshiftCluster](https://us-west-2.console.aws.amazon.com/redshift/home
 
 Click on cluster name to view details
 
-(../images/RedshiftclusterARN.png)
+Go to "See IAM Roles" and copy Role ARN in a text editor
+
+  ![](../images/RedshiftclusterARN.png)
 
  It also assumes you have configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```
@@ -42,14 +43,14 @@ CREATE TABLE region (
   R_REGIONKEY bigint NOT NULL PRIMARY KEY,
   R_NAME varchar(25),
   R_COMMENT varchar(152))
-;
+diststyle all;
 
 CREATE TABLE nation (
   N_NATIONKEY bigint NOT NULL PRIMARY KEY,
   N_NAME varchar(25),
   N_REGIONKEY bigint REFERENCES region(R_REGIONKEY),
   N_COMMENT varchar(152))
-;
+diststyle all;
 
 create table customer (
   C_CUSTKEY bigint NOT NULL PRIMARY KEY,
@@ -60,7 +61,7 @@ create table customer (
   C_ACCTBAL decimal(18,4),
   C_MKTSEGMENT varchar(10),
   C_COMMENT varchar(117))
-;
+diststyle all;
 
 create table orders (
   O_ORDERKEY bigint NOT NULL PRIMARY KEY,
@@ -72,9 +73,8 @@ create table orders (
   O_CLERK varchar(15),
   O_SHIPPRIORITY Integer,
   O_COMMENT varchar(79))
-  distkey (O_ORDERKEY)
-  sortkey (O_ORDERDATE)
-;
+distkey (O_ORDERKEY)
+sortkey (O_ORDERDATE);
 
 create table part (
   P_PARTKEY bigint NOT NULL PRIMARY KEY,
@@ -86,7 +86,7 @@ create table part (
   P_CONTAINER varchar(10),
   P_RETAILPRICE decimal(18,4),
   P_COMMENT varchar(23))
-;
+diststyle all;
 
 create table supplier (
   S_SUPPKEY bigint NOT NULL PRIMARY KEY,
@@ -96,7 +96,7 @@ create table supplier (
   S_PHONE varchar(15),
   S_ACCTBAL decimal(18,4),
   S_COMMENT varchar(101))
-;                                                              
+diststyle all;                                                              
 
 create table lineitem (
   L_ORDERKEY bigint NOT NULL REFERENCES orders(O_ORDERKEY),
@@ -117,8 +117,7 @@ create table lineitem (
   L_COMMENT varchar(44),
 PRIMARY KEY (L_ORDERKEY, L_LINENUMBER))
 distkey (L_ORDERKEY)
-sortkey (L_RECEIPTDATE)
-;
+sortkey (L_RECEIPTDATE);
 
 create table partsupp (
   PS_PARTKEY bigint NOT NULL REFERENCES part(P_PARTKEY),
@@ -127,13 +126,11 @@ create table partsupp (
   PS_SUPPLYCOST decimal(18,4),
   PS_COMMENT varchar(199),
 PRIMARY KEY (PS_PARTKEY, PS_SUPPKEY))
-;
+diststyle even;
 ```
-Notice that, we are not explicitly specifying distribution style.
+
 The default distribution style is AUTO.
 With AUTO, Amazon Redshift initially assigns ALL distribution to a small table, then changes the table to EVEN distribution when the table grows larger. The change in distribution occurs in the background, in a few seconds.
-
-Also, we will let Redshift Advisor generate customized recommendations by analyzing performance and usage metrics for your cluster. These tailored recommendations relate to operations and cluster settings. To help you prioritize your optimizations, Advisor ranks recommendations by order of impact.
 
 ## Loading Data
 A COPY command loads large amounts of data much more efficiently than using INSERT statements, and stores the data more effectively as well.  Use a single COPY command to load data for one table from multiple files.  Amazon Redshift then automatically loads the data in parallel.  For your convenience, the sample data you will use is available in a public Amazon S3 bucket. To copy this data you will need to replace the [Your-Redshift-Role-ARN] values in the script below.
@@ -186,7 +183,7 @@ Note: A few key takeaways from the above COPY statements.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
 1. COPY for the SUPPLIER table points a manifest file (supplier.json)
 
-## Table Maintenance - Analyze (OPTIONAL)
+## Table Maintenance - Analyze
 
 The ANALYZE operation updates the statistical metadata that the query planner uses to choose optimal plans.
 
@@ -208,7 +205,7 @@ order by query desc;
 ```
 Note: Time timestamp of the ANALYZE will correlate to when the COPY command was executed and there will be no entry for the second analyze statement.  Redshift knows that it does not need to run the ANALYZE operation as no data has changed in the table.
 
-## Table Maintenance - VACUUM DELETE ONLY- OPTIONAL
+## Table Maintenance - VACUUM DELETE ONLY
 Amazon Redshift automatically performs a DELETE ONLY vacuum in the background, so you rarely, if ever, need to run a DELETE ONLY vacuum.
 
 Below steps show you VACCUM operation, incase you want to do it manually. To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  

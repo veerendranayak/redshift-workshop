@@ -1,4 +1,4 @@
-# Lab 8 - Stored Procedures and Functions
+# Lab 5 - Stored Procedures and Functions
 
 Stored Procedures
 

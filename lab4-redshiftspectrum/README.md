@@ -8,7 +8,6 @@ In this lab, we show you how to query petabytes of data with Amazon Redshift and
 * [Go Back In Time](#go-back-in-time)
 * [Create a Single Version of Truth](#create-a-single-version-of-truth)
 * [Plan for the Future](#plan-for-the-future)
-* [Before You Leave](#before-you-leave)
 
 ## Before You Begin
 This lab assumes you have a Redshift cluster in **US-WEST-2 (Oregon)**

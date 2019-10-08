@@ -8,7 +8,7 @@ In this lab you will analyze the affects of Compression, De-Normalization, Distr
 * [Result Set Caching and Execution Plan Reuse](#result-set-caching-and-execution-plan-reuse)
 * [Selective Filtering](#selective-filtering)
 * [Join Strategies](#join-strategies)
-* [Before You Leave](#before-you-leave)
+
  
 ## Before You Begin
 This lab assumes you have a Redshift cluster, loaded it with TPC Benchmark data and can gather the following information.  
@@ -19,6 +19,9 @@ It also assumes you have access to a configured client tool. For more details on
 ```
 https://console.aws.amazon.com/redshift/home?#query:
 ```
+## Redshift Advisor
+Amazon Redshift now provides customized best practice recommendations with Advisor. This is available via the Amazon Redshift console at no charge. Advisor is like a personal database assistant that generates tailored recommendations related to database operations and cluster configuration based on analyzing your cluster's performance and usage metrics. However, it displays only those recommendations that will have a significant impact for your workload. When Advisor determines that a recommendation has been addressed, it will be removed from your recommendation list.
+
 ## Compressing and De-Normalizing
 ### Standard layout
 Redshift operates on high amounts of data. In order to optimize Redshift workloads, one of the key principles is to lower the amount of data stored. Diminishing this volume is achieved by using a set of compression algorithms. Instead of working on entire rows of data, containing values of different types and function, Redshift operates in a columnar fashion, this gives the opportunity to implement algorithms that can operate on single columns of data, thus greatly enhancing their efficiency. In this example we will load data into a table and test what compression scheme can be used.

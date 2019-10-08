@@ -13,10 +13,4 @@ As part of Lab Setup, we have created Redshift cluster in each of the accounts. 
 |2 |[Data Loading](lab2-dataload/README.md) |Table creation, data load, and table maintenance |
 |3 |[Table Design & Query Tuning](lab3-tabledesign/README.md) |Setting distribution and sort keys, deep copy, explain plans, system table queries |
 |4 |[Modernize Your Data Warehouse with Amazon Redshift Spectrum](lab4-redshiftspectrum/README.md) |Query petabytes of data in your data warehouse and exabytes of data in your S3 data lake, using Redshift Spectrum |
-<<<<<<< HEAD
 |5 |[Amazon Redshift Stored Procedures and Functions](lab5-procs-funcs/README.md) | Encapsulate logic for data transformation, data validation, and business-specific logic|
-=======
-|5 |[Amazon Redshift Spectrum Query Tuning](lab5/README.md) | Diagnose Redshift Spectrum query performance and optimize by leveraging partitions, optimizing storage, and predicate pushdown.|
-|6 | [Amazon Redshift Operations](lab6/README.md) | Step through some common operations a Redshift Administrator may have to do to maintain their Redhshift environment including Event Subscriptions, Cluster Encryption, Cross Region Snapshots, and Elastic Resize |
-|7 | [Querying Nested JSON](lab7/README.md) | Query Nested JSON datatypes (array, struct, map) and load nested data types into flattened structures.|
->>>>>>> dcde84c0f559e67caa2eeafd364e306c8b06baad

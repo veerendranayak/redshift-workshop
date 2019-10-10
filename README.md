@@ -11,6 +11,5 @@ As part of Lab Setup, we have created Redshift cluster in each of the accounts. 
 |---- |---- | ----|
 |1 |[Configuring JDBC connectivity](lab1-redshiftconnectivity/README.md) | connectivity with SQL Workbench/J |
 |2 |[Data Loading](lab2-dataload/README.md) |Table creation, data load, and table maintenance |
-|3 |[Table Design & Query Tuning](lab3-tabledesign/README.md) |Setting distribution and sort keys, deep copy, explain plans, system table queries |
-|4 |[Modernize Your Data Warehouse with Amazon Redshift Spectrum](lab4-redshiftspectrum/README.md) |Query petabytes of data in your data warehouse and exabytes of data in your S3 data lake, using Redshift Spectrum |
-|5 |[Amazon Redshift Stored Procedures and Functions](lab5-procs-funcs/Readme.md) | Encapsulate logic for data transformation, data validation, and business-specific logic|
+|3 |[Modernize Your Data Warehouse with Amazon Redshift Spectrum](lab3-redshiftspectrum/README.md) |Query petabytes of data in your data warehouse and exabytes of data in your S3 data lake, using Redshift Spectrum |
+|4 |[Amazon Redshift Stored Procedures and Functions](lab4-procs-funcs/Readme.md) | Encapsulate logic for data transformation, data validation, and business-specific logic|

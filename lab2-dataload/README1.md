@@ -6,7 +6,8 @@ In this lab, you will use a set of eight tables based on the TPC Benchmark data 
 * [Before You Begin](#before-you-begin)
 * [Create Tables](#create-tables)
 * [Loading Data](#loading-data)
-* [Advisor](#Redshift-Advisor)
+* [Table Maintenance - ANALYZE](#table-maintenance---analyze)
+* [Table Maintenance - VACUUM](#table-maintenance---vacuum)
 * [Troubleshooting Loads](#troubleshooting-loads)
 
 ## Before You Begin
@@ -177,136 +178,115 @@ In this lab we are using 4 dc2.large clusters nodes. The estimated time to load 
 *	PARTSUPPLIER - (80M rows) 3m
 
 Note: A few key takeaways from the above COPY statements.
+1. COMPUPDATE PRESET will assign compression using the Amazon Redshift best practices related to the data type of the column but without analyzing the data in the table.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
 1. COPY for the SUPPLIER table points a manifest file (supplier.json)
 
-## Review auto compression
-If you notice create statements, we did not specify any encoding/compression.
-The COPY command chooses the compression encoding for each column if the target table is empty. The encoding for each column is determined by Amazon Redshift per below criteria-
-
-* Columns that are defined as sort keys are assigned RAW compression.
-
-* Columns that are defined as BOOLEAN, REAL, or DOUBLE PRECISION data types are assigned RAW compression.
-
-* All other columns are assigned LZO compression.
-
-Execute following query to review encoding column. You would notice compression being applied automatically.
-````
-select * from pg_table_def where schemaname='public'
-````
-
-## Review auto Analyze and auto Vacuum
+## Table Maintenance - Analyze
 
 The ANALYZE operation updates the statistical metadata that the query planner uses to choose optimal plans.
 
-Amazon Redshift continuously monitors your database and automatically performs analyze operations in the background. To minimize impact to your system performance, automatic analyze runs during periods when workloads are light.
+In most cases, you don't need to explicitly run the ANALYZE command. Amazon Redshift monitors changes to your workload and automatically updates statistics in the background.
+When you load data with the COPY command, you can perform an analysis on incrementally loaded data automatically by setting the STATUPDATE option to ON.  When loading into an empty table, the COPY command by default performs the ANALYZE operation.
 
-Amazon Redshift also automatically performs a DELETE ONLY vacuum in the background, so you rarely, if ever, need to run a DELETE ONLY vacuum.
-
-Running below statement will delete around 171 M records from lineitem.
-
-````
-delete from LINEITEM where l_shipmode in ('RAIL','AIR')
-````
-
-After you run above command, Redshift will run auto analyze and vacuum delete to regenerate statistics and reclaim space. Screenshot below shows delete statement executed by user - "awsuser" and after some time, user -"rdsdb" running analyze and vacuum delete. The user name rdsdb is used internally by Amazon Redshift to perform routine administrative and maintenance tasks
-
-![](../images/autoanalyzevacuumdelete.png)
-
-Below query shows last executed queries on cluster for lineitem. The result will likely not show auto analyze and auto vacuum delete soon after. We can come back towards end of lab to run this statement again.
-````
-select pu.usename, qry.userid,query, rtrim(querytxt), starttime
-from stl_query qry,  pg_user pu
-where  qry.userid= pu.usesysid and querytxt like '%lineitem%'
-order by starttime desc
-````
-
-## Redshift Advisor
-Amazon Redshift provides customized best practice recommendations with Advisor. This is available via the Amazon Redshift console at no charge. Advisor is like a personal database assistant that generates tailored recommendations related to database operations and cluster configuration based on analyzing your cluster's performance and usage metrics. However, it displays only those recommendations that will have a significant impact for your workload. When Advisor determines that a recommendation has been addressed, it will be removed from your recommendation list.
-
-![](../images/advisor.png)
-
-## Review distribution
-
-Advisor analyzes your cluster’s workload to identify the most appropriate distribution key for the tables that can significantly benefit from a KEY distribution style.
-
-Both Customer and Orders tables are  distributed by AUTO (EVEN). You can check distribution using below query
-
-````
-select * from svv_table_info  where schema='public'
-````
-
-But if your query access pattern frequently joins these two tables based on cust_key field, then Advisor will recommend to alter the distribution style to KEY based on this field and provide SQL for this change. This will co-locate similar number of rows on each node slice.
-
-As Advisor requires enough queries to make this recommendation, we will not be able to review Advisor recommendation in this lab, but we would review the performance benefit of co-locating the data for joins.
-
-Run below query on tables with EVEN distribution
-
-````
-SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
-AVG(o_totalprice) AS medium_amount,
-SUM(o_totalprice) AS orders_revenue
-FROM orders o
-INNER JOIN customer c ON o.o_custkey = c.c_custkey
-GROUP BY c_mktsegment;
-````
-
-Let's create separate version of Customers and Orders
-````
-create table orders_v as select * from orders;
-create table customer_v as select * from customer;
-````
-Alter distribution to key
-````
-alter table orders_v alter diststyle key distkey o_custkey;
-alter table customer_v alter diststyle key distkey c_custkey;
-````
-Running same select query on new set of tables
-````
-SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
-AVG(o_totalprice) AS medium_amount,
-SUM(o_totalprice) AS orders_revenue
-FROM orders_v o
-INNER JOIN customer_v c ON o.o_custkey = c.c_custkey
-GROUP BY c_mktsegment;
-````
-
-Analyze the performances of each query. This query gets the 3 last queries ran against the database.
-Second query with join on key distribution should show improvement over first query.
-
+Run the ANALYZE command against the CUSTOMER table.
 ```
-SELECT query, TRIM(querytxt) as SQL, starttime, endtime, DATEDIFF(millisecs, starttime, endtime) AS durationin_milliseconds,DATEDIFF(secs, starttime, endtime) AS durationin_seconds
-FROM STL_QUERY
-WHERE TRIM(querytxt) like '%customer%' and TRIM(querytxt) like '%orders%'
-ORDER BY starttime DESC
-LIMIT 3;
+analyze customer;
+```
+To find out when ANALYZE commands were run, you can query system tables and view such as STL_QUERY and STV_STATEMENTTEXT and include a restriction on padb_fetch_sample.  For example, to find out when the CUSTOMER table was last analyzed, run this query:
+```
+select query, rtrim(querytxt), starttime
+from stl_query
+where
+querytxt like 'padb_fetch_sample%' and
+querytxt like '%customer%'
+order by query desc;
+```
+Note: Time timestamp of the ANALYZE will correlate to when the COPY command was executed and there will be no entry for the second analyze statement.  Redshift knows that it does not need to run the ANALYZE operation as no data has changed in the table.
+
+## Table Maintenance - VACUUM DELETE ONLY
+Amazon Redshift automatically performs a DELETE ONLY vacuum in the background, so you rarely, if ever, need to run a DELETE ONLY vacuum.
+
+Below steps show you VACCUM operation, incase you want to do it manually. To perform an update, Amazon Redshift deletes the original row and appends the updated row, so every update is effectively a delete and an insert.  
+
+Capture the initial space usage of the ORDERS table.
+```
+SELECT
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
+```
+|table_name|col|column_name|count|
+|---|---|---|---|
+|orders|0|o_orderkey|360|
+|orders|1|o_custkey|336|
+|orders|2|o_orderstatus|24|
+|orders|3|o_totalprice|408|
+|orders|4|o_orderdate|312|
+|orders|5|o_orderpriority|208|
+|orders|6|o_clerk|440|
+|orders|7|o_shippriority|24|
+|orders|8|o_comment|1552|
+
+Delete rows from the ORDERS table.
+```
+delete orders where o_orderdate between '1992-01-01' and '1993-01-01';
 ```
 
-## Selective Filtering
-Redshift takes advantage of zone maps which allows the optimizer to skip reading blocks of data when it knows that the filter criteria will not be matched.  In the case of the orders_v1 table, because we have defined a sort key on the o_order_date, queries leveraging that field as a predicate will return much faster.
+Confirm that Redshift did not automatically reclaim space by running the following query again and noting the values have not changed.
+```
+SELECT
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
+```
 
-1. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used.
+Run the VACUUM command
 ```
-select count(1), sum(o_totalprice)
-FROM orders
-WHERE o_orderdate between '1993-07-05' and '1993-07-07'
+vacuum delete only orders;
 ```
+
+Confirm that the VACUUM command reclaimed space by running the follwoing quer again and noting the values have changed.
 ```
-select count(1), sum(o_totalprice)
-FROM orders
-WHERE o_orderdate between '1993-07-07' and '1993-07-09'
+SELECT
+  TRIM(name) as table_name,col,
+  TRIM(pg_attribute.attname) AS column_name,
+  count(blocknum)
+FROM
+  svv_diskusage JOIN pg_attribute ON
+    svv_diskusage.col = pg_attribute.attnum-1 AND
+    svv_diskusage.tbl = pg_attribute.attrelid
+    where TRIM(name)='orders'
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
 ```
-2. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used. You will notice the second query takes significantly longer than the second query in the previous step even though the number of rows which were aggregated is similar.  This is due to the first query's ability to take advantage of the Sort Key defined on the table.
-```
-select count(1), sum(o_totalprice)
-FROM orders
-where o_orderkey < 450001
-```
-```
-select count(1), sum(o_totalprice)
-FROM orders
-where o_orderkey < 451001
-```
+
+|table_name|col|column_name|count|
+|---|---|---|---|
+|orders|0|o_orderkey|312|
+|orders|1|o_custkey|288|
+|orders|2|o_orderstatus|24|
+|orders|3|o_totalprice|352|
+|orders|4|o_orderdate|272|
+|orders|5|o_orderpriority|184|
+|orders|6|o_clerk|376|
+|orders|7|o_shippriority|24|
+|orders|8|o_comment|1320|
+
 ## Troubleshooting Loads
 There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:
 * STL_LOAD_ERRORS

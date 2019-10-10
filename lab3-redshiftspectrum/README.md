@@ -4,23 +4,18 @@ In this lab, we show you how to query petabytes of data with Amazon Redshift and
 
 ## Contents
 * [Before You Begin](#before-you-begin)
-* [What Happened in 2016](#what-happened-in-2016)
 * [Go Back In Time](#go-back-in-time)
 * [Create a Single Version of Truth](#create-a-single-version-of-truth)
 * [Plan for the Future](#plan-for-the-future)
 
 ## Before You Begin
-This lab assumes you have a Redshift cluster in **US-WEST-2 (Oregon)**
-
-It also assumes you have access to a configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
+It assumes you have access to a configured client tool. For more details on configuring SQL Workbench/J as your client tool, see [Lab 1 - Creating Redshift Clusters : Configure Client Tool](../lab1/README.md#configure-client-tool). As an alternative you can use the Redshift provided online Query Editor which does not require an installation.
 ```
 https://console.aws.amazon.com/redshift/home?#query:
 ```
 
-## What Happened in 2016
 In the first part of this lab, we will perform the following activities:
 * Load the Green company data for January 2016 into Redshift direct-attached storage (DAS) with COPY.
-* Collect supporting/refuting evidence for the impact of the January, 2016 blizzard on taxi usage.
 * The CSV data is by month on Amazon S3. Here's a quick screenshot from the S3 console:
 ````
 https://s3.console.aws.amazon.com/s3/buckets/us-west-2.serverless-analytics/NYC-Pub/green/?region=us-west-2&tab=overview&prefixSearch=green_tripdata_2016
@@ -37,10 +32,7 @@ https://s3.console.aws.amazon.com/s3/object/us-west-2.serverless-analytics/NYC-P
 ### Build your DDL
 Create a schema `workshop_das` and table `workshop_das.green_201601_csv` for tables that will reside on the Redshift compute nodes, AKA the Redshift direct-attached storage (DAS) tables.
 
-<details><summary>Hint</summary>
-<p>
-
-```python
+````
 CREATE SCHEMA workshop_das;
 
 CREATE TABLE workshop_das.green_201601_csv
@@ -69,18 +61,12 @@ CREATE TABLE workshop_das.green_201601_csv
 )
 DISTSTYLE EVEN
 SORTKEY (passenger_count,pickup_datetime);
-```
-
-</p>
-</details>
+````
 
 ### Build your Copy Command
 * Build your copy command to copy the data from Amazon S3. This dataset has the number of taxi rides in the month of January 2016.
 
-<details><summary>Hint</summary>
-<p>
-
-```python
+````
 COPY workshop_das.green_201601_csv
 FROM 's3://us-west-2.serverless-analytics/NYC-Pub/green/green_tripdata_2016-01.csv'
 IAM_ROLE '[Your-Redshift_Role-ARN]'
@@ -89,49 +75,13 @@ IGNOREHEADER 1
 DELIMITER ','
 IGNOREBLANKLINES
 ;
-```
-</p>
-</details>
-
-* Determine how many rows you just loaded.
-
-<details><summary>Hint</summary>
-<p>
-
-```
-select count(1) from workshop_das.green_201601_csv;
---1445285
-```
-
-</p>
-</details>
-
-**HINT: Replace IAM_ROLE with Role ARN to cluster.**
-
-### Pin-point the Blizzard
-In this month, there is a date which had the lowest number of taxi rides due to a blizzard. Can you find that date?
-
-<details><summary>SQL-Based Hint</summary>
-<p>
-
-```
-SELECT TO_CHAR(pickup_datetime, 'YYYY-MM-DD'),
-COUNT(*)
-FROM workshop_das.green_201601_csv
-GROUP BY 1
-ORDER BY 1;
-```
-
-</p>
-</details>
-
+````
 
 ## Go Back in Time
 In the next part of this lab, we will perform the following activities:
 * Query historical data residing on S3 by create an external DB for Redshift Spectrum.
 * Introspect the historical data, perhaps rolling-up the data in novel ways to see trends over time, or other dimensions.
-* Enforce reasonable use of the cluster with Redshift Spectrum-specific Query Monitoring Rules (QMR).
-	* Test the QMR setup by writing an excessive-use query.
+
 
 **Note the partitioning scheme is Year, Month, Type (where Type is a taxi company). Here's a quick Screenshot:**
 
@@ -178,24 +128,16 @@ Because external tables are stored in a shared Glue Catalog for use within the A
 
 * Now that the table has been cataloged, switch back to your Redshift query editor and create an external schema **adb305** pointing to your Glue Catalog Database **spectrumdb**
 
-<details><summary>Hint</summary>
-<p>
+
 
 ```
 CREATE external SCHEMA adb305
 FROM data catalog DATABASE 'spectrumdb'
-IAM_ROLE 'arn:aws:iam::[Your-AWS-Account_Id]:role/[Your-Redshift_Role]'
+IAM_ROLE '[Your-Redshift-Role-ARN]'
 CREATE external DATABASE if not exists;
 ```
 
-</p>
-</details>
-
-
 * Run the query from the previous step using the external table instead of the direct-attached storage (DAS).
-
-<details><summary>Hint</summary>
-<p>
 
 ```
 SELECT TO_CHAR(pickup_datetime, 'YYYY-MM-DD'),
@@ -206,27 +148,6 @@ GROUP BY 1
 ORDER BY 1;
 ```
 
-</p>
-</details>
-
-### Add a Redshift Spectrum Query Monitoring Rule to ensure reasonable use
-In Amazon Redshift workload management (WLM), query monitoring rules define metrics-based performance boundaries for WLM queues and specify what action to take when a query goes beyond those boundaries. Setup a Query Monitoring Rule to ensure reasonable use.
-
-```
-https://docs.aws.amazon.com/redshift/latest/dg/cm-c-wlm-query-monitoring-rules.html
-```
-Take a look at SVL_QUERY_METRICS_SUMMARY view shows the maximum values of metrics for completed queries. This view is derived from the STL_QUERY_METRICS system table. Use the values in this view as an aid to determine threshold values for defining query monitoring rules.
-
-```
-https://docs.aws.amazon.com/redshift/latest/dg/r_SVL_QUERY_METRICS_SUMMARY.html
-```
-
-Quick Note on QLM: The WLM configuration properties are either dynamic or static. Dynamic properties can be applied to the database without a cluster reboot, but static properties require a cluster reboot for changes to take effect. Additional info here:
-
-```
-https://docs.aws.amazon.com/redshift/latest/mgmt/workload-mgmt-config.html
-```
-
 ## Create a Single Version of Truth
 In the next part of this lab, we will demonstrate how to create a view which has data that is consolidated from S3 via Spectrum and the Redshift direct-attached storage.
 
@@ -234,12 +155,10 @@ In the next part of this lab, we will demonstrate how to create a view which has
 Create a view that covers both the January, 2016 Green company DAS table with the historical data residing on S3 to make a single table exclusively for the Green data scientists. Use CTAS to create a table with data from January, 2016 for the Green company. Compare the runtime to populate this with the COPY runtime earlier.
 
 CTAS approximate runtime is 11.40s
-COPY approximate runtime is <<>>
+COPY approximate runtime is 9.67s
 
 With CTAS method, we have more flexibility to transform data while loading in local Redshift table.
 
-<details><summary>Hint</summary>
-<p>
 
 ```
 CREATE TABLE workshop_das.taxi_201601 AS
@@ -247,8 +166,6 @@ SELECT * FROM adb305.ny_pub
 WHERE year = 2016 AND month = 1 AND type = 'green';
 ```
 
-</p>
-</details>
 
 Note: What about column compression/encoding? Similar to COPY command, remember that on a CTAS, Amazon Redshift automatically assigns compression encoding as follows:
 
@@ -262,9 +179,6 @@ https://docs.aws.amazon.com/redshift/latest/dg/r_CTAS_usage_notes.html
 ### Complete populating the table
 Add to the January, 2016 table with an INSERT/SELECT statement for the other taxi companies.
 
-<details><summary>Hint</summary>
-<p>
-
 ```
 INSERT INTO workshop_das.taxi_201601 (
   SELECT *
@@ -272,14 +186,9 @@ INSERT INTO workshop_das.taxi_201601 (
   WHERE year = 2016 AND month = 1 AND type != 'green');
 ```
 
-</p>
-</details>
-
 ### Remove overlaps in the Spectrum table
 Now that we've loaded all January, 2016 data, we can remove the partitions from the Spectrum table so there is no overlap between the direct-attached storage (DAS) table and the Spectrum table.
 
-<details><summary>Hint</summary>
-<p>
 
 ```
 ALTER TABLE adb305.ny_pub DROP PARTITION(year=2016, month=1, type='fhv');
@@ -287,15 +196,9 @@ ALTER TABLE adb305.ny_pub DROP PARTITION(year=2016, month=1, type='green');
 ALTER TABLE adb305.ny_pub DROP PARTITION(year=2016, month=1, type='yellow');
 ```
 
-</p>
-</details>
-
-
 ### Create a view with no Schema Binding
 Create a view **adb305_view_NYTaxiRides** from **workshop_das.taxi_201601** that allows seamless querying of the DAS and Spectrum data.
 
-<details><summary>Hint</summary>
-<p>
 
 ```
 CREATE VIEW adb305_view_NYTaxiRides AS
@@ -305,93 +208,27 @@ CREATE VIEW adb305_view_NYTaxiRides AS
 WITH NO SCHEMA BINDING;
 
 ```
-
-</p>
-</details>
-
-### Is it Surprising this is valid SQL?
+### View results together
 
 * Note the use of the partition columns in the SELECT and WHERE clauses. Where were those columns in your Spectrum table definition?
 * Note the filters being applied either at the partition or file levels in the Spectrum portion of the query (versus the Redshift DAS section).
 * If you actually run the query (and not just generate the explain plan), does the runtime surprise you? Why or why not?
 
+
+* Analyze Redshift local data (month 201601) with Spectrum data (rest of data). Also, since Spectrum is priced based on data scanned, second query looks at amount of data scanned by first query and associated cost
+
 ````
-EXPLAIN
 SELECT year, month, type, COUNT(*)
 FROM adb305_view_NYTaxiRides
-WHERE year = 2016 AND month IN (1) AND passenger_count = 4
-GROUP BY 1,2,3 ORDER BY 1,2,3;
-````
-
-````
-QUERY PLAN
-XN Merge  (cost=1000090025653.20..1000090025653.21 rows=2 width=48)
-  Merge Key: derived_col1, derived_col2, derived_col3
-  ->  XN Network  (cost=1000090025653.20..1000090025653.21 rows=2 width=48)
-        Send to leader
-        ->  XN Sort  (cost=1000090025653.20..1000090025653.21 rows=2 width=48)
-              Sort Key: derived_col1, derived_col2, derived_col3
-              ->  XN HashAggregate  (cost=90025653.19..90025653.19 rows=2 width=48)
-                    ->  XN Subquery Scan adb305_view_nytaxirides  (cost=25608.12..90025653.17 rows=2 width=48)
-                          ->  XN Append  (cost=25608.12..90025653.15 rows=2 width=38)
-                                ->  XN Subquery Scan "*SELECT* 1"  (cost=25608.12..25608.13 rows=1 width=18)
-                                      ->  XN HashAggregate  (cost=25608.12..25608.12 rows=1 width=18)
-                                            ->  XN Seq Scan on t201601_pqt  (cost=0.00..25292.49 rows=31563 width=18)
-                                                  <b>Filter: ((passenger_count = 4) AND ("month" = 1) AND ("year" = 2016))</b>
-                                ->  XN Subquery Scan "*SELECT* 2"  (cost=90000045.00..90000045.02 rows=1 width=38)
-                                      ->  XN HashAggregate  (cost=90000045.00..90000045.01 rows=1 width=38)
-                                            ->  XN Partition Loop  (cost=90000000.00..90000035.00 rows=1000 width=38)
-                                                  ->  XN Seq Scan PartitionInfo of adb305.nytaxirides  (cost=0.00..15.00 rows=1 width=30)
-                                                       <b> Filter: (("month" = 1) AND ("year" = 2016))</b>
-                                                  ->  XN S3 Query Scan nytaxirides  (cost=45000000.00..45000010.00 rows=1000 width=8)
-                                                        ->  S3 Aggregate  (cost=45000000.00..45000000.00 rows=1000 width=0)
-                                                              ->  S3 Seq Scan adb305.nytaxirides location:"s3://us-west-2.serverless-analytics/canonical/NY-Pub" format:PARQUET  (cost=0.00..37500000.00 rows=3000000000 width=0)
-                                                                  <b> Filter: (passenger_count = 4)</b>
-````
-
-* Now include Spectrum data by adding a month whose data is in Spectrum
-
-````
-EXPLAIN
-SELECT year, month, type, COUNT(*)
-FROM adb305_view_NYTaxiRides
-WHERE year = 2016 AND month IN (1,2) AND passenger_count = 4
+WHERE year = 2016 AND passenger_count = 4
 GROUP BY 1,2,3 ORDER BY 1,2,3;
 
 ````
-
-````
-QUERY PLAN
-XN Merge  (cost=1000090029268.92..1000090029268.92 rows=2 width=48)
-  Merge Key: derived_col1, derived_col2, derived_col3
-  ->  XN Network  (cost=1000090029268.92..1000090029268.92 rows=2 width=48)
-        Send to leader
-        ->  XN Sort  (cost=1000090029268.92..1000090029268.92 rows=2 width=48)
-              Sort Key: derived_col1, derived_col2, derived_col3
-              ->  XN HashAggregate  (cost=90029268.90..90029268.90 rows=2 width=48)
-                    ->  XN Subquery Scan adb305_view_nytaxirides  (cost=29221.33..90029268.88 rows=2 width=48)
-                          ->  XN Append  (cost=29221.33..90029268.86 rows=2 width=38)
-                                ->  XN Subquery Scan "*SELECT* 1"  (cost=29221.33..29221.34 rows=1 width=18)
-                                      ->  XN HashAggregate  (cost=29221.33..29221.33 rows=1 width=18)
-                                            ->  XN Seq Scan on t201601_pqt  (cost=0.00..28905.70 rows=31563 width=18)
-                                                 <b> Filter: ((passenger_count = 4) AND ("year" = 2016) AND (("month" = 1) OR ("month" = 2))) </b>
-                                ->  XN Subquery Scan "*SELECT* 2"  (cost=90000047.50..90000047.52 rows=1 width=38)
-                                      ->  XN HashAggregate  (cost=90000047.50..90000047.51 rows=1 width=38)
-                                            ->  XN Partition Loop  (cost=90000000.00..90000037.50 rows=1000 width=38)
-                                                  ->  XN Seq Scan PartitionInfo of adb305.nytaxirides  (cost=0.00..17.50 rows=1 width=30)
-                                                       <b> Filter: (("year" = 2016) AND (("month" = 1) OR ("month" = 2)))</b>
-                                                  ->  XN S3 Query Scan nytaxirides  (cost=45000000.00..45000010.00 rows=1000 width=8)
-                                                        ->  S3 Aggregate  (cost=45000000.00..45000000.00 rows=1000 width=0)
-                                                              ->  S3 Seq Scan adb305.nytaxirides location:"s3://us-west-2.serverless-analytics/canonical/NY-Pub" format:PARQUET  (cost=0.00..37500000.00 rows=3000000000 width=0)
-                                                                  <b> Filter: (passenger_count = 4)</b>
-````
-As Spectrum is priced based on data scanned, let's look at  amount of data read by previous query and associated cost
-
 ````
 select qm.query, query_blocks_read,query_execution_time,scan_row_count,spectrum_scan_row_count,spectrum_scan_size_mb,cast(cast(spectrum_scan_size_mb as float)/1024/1024*5.000  as varchar) spectrum_cost ,TRIM(querytxt) as SQL,qr.starttime,qr.endtime
 from SVL_QUERY_METRICS_SUMMARY qm join STL_QUERY qr
 on qm.query=qr.query
-order by qr.endtime desc
+order by qr.endtime desc;
 ````
 
 ## Plan for the Future

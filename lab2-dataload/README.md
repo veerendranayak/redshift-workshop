@@ -1,13 +1,14 @@
 # LAB 2 - Data Loading
-In this lab, you will use a set of eight tables based on the TPC Benchmark data model. You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  The focus will be on using auto settings of Redshift cluster.
+In this lab, you will use a set of six tables based on the TPC Benchmark data model. You create these tables within your Redshift cluster and load these tables with sample data stored in S3.  The focus will be on using auto settings of Redshift cluster.
 ![](../images/Model.png)
 
 ## Contents
 * [Before You Begin](#before-you-begin)
 * [Create Tables](#create-tables)
 * [Loading Data](#loading-data)
-* [Advisor](#Redshift-Advisor)
 * [Troubleshooting Loads](#troubleshooting-loads)
+* [Advisor](#Redshift-Advisor)
+
 
 ## Before You Begin
 
@@ -19,8 +20,6 @@ https://console.aws.amazon.com/redshift/home?#query:
 ## Create Tables
 In SQL Workbench, Copy the following create table statements to create tables in the database.  
 ```
-DROP TABLE IF EXISTS partsupp;
-DROP TABLE IF EXISTS lineitem;
 DROP TABLE IF EXISTS supplier;
 DROP TABLE IF EXISTS part;
 DROP TABLE IF EXISTS orders;
@@ -84,36 +83,7 @@ create table supplier (
   S_PHONE varchar(15),
   S_ACCTBAL decimal(18,4),
   S_COMMENT varchar(101))
-;                                                              
-
-create table lineitem (
-  L_ORDERKEY bigint NOT NULL REFERENCES orders(O_ORDERKEY),
-  L_PARTKEY bigint REFERENCES part(P_PARTKEY),
-  L_SUPPKEY bigint REFERENCES supplier(S_SUPPKEY),
-  L_LINENUMBER integer NOT NULL,
-  L_QUANTITY decimal(18,4),
-  L_EXTENDEDPRICE decimal(18,4),
-  L_DISCOUNT decimal(18,4),
-  L_TAX decimal(18,4),
-  L_RETURNFLAG varchar(1),
-  L_LINESTATUS varchar(1),
-  L_SHIPDATE date,
-  L_COMMITDATE date,
-  L_RECEIPTDATE date,
-  L_SHIPINSTRUCT varchar(25),
-  L_SHIPMODE varchar(10),
-  L_COMMENT varchar(44),
-PRIMARY KEY (L_ORDERKEY, L_LINENUMBER))
-sortkey (L_RECEIPTDATE);
-
-create table partsupp (
-  PS_PARTKEY bigint NOT NULL REFERENCES part(P_PARTKEY),
-  PS_SUPPKEY bigint NOT NULL REFERENCES supplier(S_SUPPKEY),
-  PS_AVAILQTY integer,
-  PS_SUPPLYCOST decimal(18,4),
-  PS_COMMENT varchar(199),
-PRIMARY KEY (PS_PARTKEY, PS_SUPPKEY))
-;
+;                                                         
 ```
 
 ## Loading Data
@@ -157,14 +127,6 @@ region 'us-west-2' lzop delimiter '|' ;
 copy supplier from 's3://redshift-immersionday-labs/data/supplier/supplier.json' manifest
 iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' ;
-
-copy lineitem from 's3://redshift-immersionday-labs/data/lineitem/lineitem.tbl.'
-iam_role '[Your-Redshift-Role-ARN]'
-region 'us-west-2' lzop delimiter '|' ;
-
-copy partsupp from 's3://redshift-immersionday-labs/data/partsupp/partsupp.tbl.'
-iam_role '[Your-Redshift-Role-ARN]'
-region 'us-west-2' lzop delimiter '|' ;
 ```
 In this lab we are using 4 dc2.large clusters nodes. The estimated time to load the data is as follows, note you can check timing information on actions in the performance and query tabs on the redshift console:
 * REGION (5 rows) - 20s
@@ -173,12 +135,47 @@ In this lab we are using 4 dc2.large clusters nodes. The estimated time to load 
 * ORDERS - (76M rows) - 1m
 * PART - (20M rows) - 4m
 *	SUPPLIER - (1M rows) - 1m
-* LINEITEM - (600M rows) - 13m
-*	PARTSUPPLIER - (80M rows) 3m
 
 Note: A few key takeaways from the above COPY statements.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
-1. COPY for the SUPPLIER table points a manifest file (supplier.json)
+2. COPY for the SUPPLIER table points a manifest file (supplier.json)
+
+## Troubleshooting Loads
+There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:
+* STL_LOAD_ERRORS
+* STL_FILE_SCAN
+
+In addition, you can validate your data without actually loading the table.  Use the NOLOAD option with the COPY command to make sure that your data file will load without any errors before running the actual data load.  Running COPY with the NOLOAD option is much faster than loading the data since it only parses the files.
+
+Let’s try to load the CUSTOMER table with a different data file with mismatched columns.  To copy this data you will need to replace the [Your-AWS_Account_Id] and [Your-Redshift_Role] values in the script below.   
+```
+COPY customer FROM 's3://redshift-immersionday-labs/data/nation/nation.tbl.'
+iam_role '[Your-Redshift-Role-ARN]'
+region 'us-west-2' lzop delimiter '|' noload;
+```
+
+You will get the following error.
+```
+ERROR: Load into table 'customer' failed.  Check 'stl_load_errors' system table for details. [SQL State=XX000]
+```
+
+Query the STL_LOAD_ERROR system table for details.
+```
+select * from stl_load_errors;
+```
+
+You can also create a view that returns details about load errors.  The following example joins the STL_LOAD_ERRORS table to the STV_TBL_PERM table to match table IDs with actual table names.
+```
+create view loadview as
+(select distinct tbl, trim(name) as table_name, query, starttime,
+trim(filename) as input, line_number, colname, err_code,
+trim(err_reason) as reason
+from stl_load_errors sl, stv_tbl_perm sp
+where sl.tbl = sp.id);
+
+-- Query the LOADVIEW view to isolate the problem.
+select * from loadview where table_name='customer';
+```
 
 ## Review auto compression
 If you notice create statements, we did not specify any encoding/compression.
@@ -203,21 +200,21 @@ Amazon Redshift continuously monitors your database and automatically performs a
 
 Amazon Redshift also automatically performs a DELETE ONLY vacuum in the background, so you rarely, if ever, need to run a DELETE ONLY vacuum.
 
-Running below statement will delete around 171 M records from lineitem.
+Running below statement will delete over 570 K records from supplier.
 
 ````
-delete from LINEITEM where l_shipmode in ('RAIL','AIR')
+delete from SUPPLIER where s_nationkey < 13;
 ````
 
 After you run above command, Redshift will run auto analyze and vacuum delete to regenerate statistics and reclaim space. Screenshot below shows delete statement executed by user - "awsuser" and after some time, user -"rdsdb" running analyze and vacuum delete. The user name rdsdb is used internally by Amazon Redshift to perform routine administrative and maintenance tasks
 
-![](../images/autoanalyzevacuumdelete.png)
+![](../images/supplier.png)
 
 Below query shows last executed queries on cluster for lineitem. The result will likely not show auto analyze and auto vacuum delete soon after. We can come back towards end of lab to run this statement again.
 ````
 select pu.usename, qry.userid,query, rtrim(querytxt), starttime
 from stl_query qry,  pg_user pu
-where  qry.userid= pu.usesysid and querytxt like '%lineitem%'
+where  qry.userid= pu.usesysid and querytxt like '%supplier%'
 order by starttime desc
 ````
 
@@ -236,9 +233,9 @@ Both Customer and Orders tables are  distributed by AUTO (EVEN). You can check d
 select * from svv_table_info  where schema='public'
 ````
 
-But if your query access pattern frequently joins these two tables based on cust_key field, then Advisor will recommend to alter the distribution style to KEY based on this field and provide SQL for this change. This will co-locate similar number of rows on each node slice.
+But if your query access pattern frequently joins these two tables based on cust_key field, then Advisor will likely recommend to alter the distribution style to KEY and provide SQL for this change. This will co-locate similar number of rows on each node slice.
 
-As Advisor requires enough queries to make this recommendation, we will not be able to review Advisor recommendation in this lab, but we would review the performance benefit of co-locating the data for joins.
+As Advisor requires enough data to make this recommendation, we will not be able to review Advisor recommendation in this lab, but we would review the performance benefit of co-locating the data for joins.
 
 Run below query on tables with EVEN distribution
 
@@ -306,40 +303,4 @@ where o_orderkey < 450001
 select count(1), sum(o_totalprice)
 FROM orders
 where o_orderkey < 451001
-```
-## Troubleshooting Loads
-There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:
-* STL_LOAD_ERRORS
-* STL_FILE_SCAN
-
-In addition, you can validate your data without actually loading the table.  Use the NOLOAD option with the COPY command to make sure that your data file will load without any errors before running the actual data load.  Running COPY with the NOLOAD option is much faster than loading the data since it only parses the files.
-
-Let’s try to load the CUSTOMER table with a different data file with mismatched columns.  To copy this data you will need to replace the [Your-AWS_Account_Id] and [Your-Redshift_Role] values in the script below.   
-```
-COPY customer FROM 's3://redshift-immersionday-labs/data/nation/nation.tbl.'
-iam_role '[Your-Redshift-Role-ARN]'
-region 'us-west-2' lzop delimiter '|' noload;
-```
-
-You will get the following error.
-```
-ERROR: Load into table 'customer' failed.  Check 'stl_load_errors' system table for details. [SQL State=XX000]
-```
-
-Query the STL_LOAD_ERROR system table for details.
-```
-select * from stl_load_errors;
-```
-
-You can also create a view that returns details about load errors.  The following example joins the STL_LOAD_ERRORS table to the STV_TBL_PERM table to match table IDs with actual table names.
-```
-create view loadview as
-(select distinct tbl, trim(name) as table_name, query, starttime,
-trim(filename) as input, line_number, colname, err_code,
-trim(err_reason) as reason
-from stl_load_errors sl, stv_tbl_perm sp
-where sl.tbl = sp.id);
-
--- Query the LOADVIEW view to isolate the problem.
-select * from loadview where table_name='customer';
 ```

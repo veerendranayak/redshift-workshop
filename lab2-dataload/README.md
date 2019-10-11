@@ -221,11 +221,11 @@ order by starttime desc
 ## Redshift Advisor
 Amazon Redshift provides customized best practice recommendations with Advisor. This is available via the Amazon Redshift console at no charge. Advisor is like a personal database assistant that generates tailored recommendations related to database operations and cluster configuration based on analyzing your cluster's performance and usage metrics. However, it displays only those recommendations that will have a significant impact for your workload. When Advisor determines that a recommendation has been addressed, it will be removed from your recommendation list.
 
+There has not been enough activity on your cluster yet, so we will not be looking at during the labs today.  We will discuss the Advisor and its recommendations in the following sections and you should monitor Redshift Advisor for your production clusters  frequently.
+
 ![](../images/advisor.png)
 
 ## Review distribution
-
-Advisor analyzes your cluster’s workload to identify the most appropriate distribution key for the tables that can significantly benefit from a KEY distribution style.
 
 Both Customer and Orders tables are  distributed by AUTO (EVEN). You can check distribution using below query
 
@@ -235,9 +235,13 @@ select * from svv_table_info  where schema='public'
 
 But if your query access pattern frequently joins these two tables based on cust_key field, then Advisor will likely recommend to alter the distribution style to KEY and provide SQL for this change. This will co-locate similar number of rows on each node slice.
 
-As Advisor requires enough data to make this recommendation, we will not be able to review Advisor recommendation in this lab, but we would review the performance benefit of co-locating the data for joins.
+As Advisor requires enough data to make this recommendation, we will not be able to review Advisor recommendation in this lab, but we will review the performance benefit of co-locating the data for joins.
 
-Run below query on tables with EVEN distribution
+Below, we will compare the results of EVEN distribution style query, to the same query on new tables using the KEY distribution style.
+
+Run following query on tables with EVEN distribution.
+
+call this first performance test query, Query 1
 
 ````
 SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
@@ -248,17 +252,19 @@ INNER JOIN customer c ON o.o_custkey = c.c_custkey
 GROUP BY c_mktsegment;
 ````
 
-Let's create separate version of Customers and Orders
+Let's create separate versions of Customers and Orders
 ````
 create table orders_v as select * from orders;
 create table customer_v as select * from customer;
 ````
-Alter distribution to key
+Now we will assign a “key” distribution style to these new tables using the cust_key. This will immediately redistribute data amongst the nodes and slice.
+
 ````
 alter table orders_v alter diststyle key distkey o_custkey;
 alter table customer_v alter diststyle key distkey c_custkey;
 ````
 Running same select query on new set of tables
+Call this Query 2
 ````
 SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
 AVG(o_totalprice) AS medium_amount,
@@ -268,37 +274,44 @@ INNER JOIN customer_v c ON o.o_custkey = c.c_custkey
 GROUP BY c_mktsegment;
 ````
 
-Analyze the performances of each query. This query gets the 3 last queries ran against the database.
-Second query with join on key distribution should show improvement over first query.
+Analyze the performances of Query 1 and Query 2. Below query gets the last 2 queries ran against the database.
+Query 2 with join on key distribution should show improvement over first query.
 
 ```
 SELECT query, TRIM(querytxt) as SQL, starttime, endtime, DATEDIFF(millisecs, starttime, endtime) AS durationin_milliseconds,DATEDIFF(secs, starttime, endtime) AS durationin_seconds
 FROM STL_QUERY
 WHERE TRIM(querytxt) like '%customer%' and TRIM(querytxt) like '%orders%'
 ORDER BY starttime DESC
-LIMIT 3;
+LIMIT 2;
 ```
 
 ## Selective Filtering
 Redshift takes advantage of zone maps which allows the optimizer to skip reading blocks of data when it knows that the filter criteria will not be matched.  In the case of the orders_v1 table, because we have defined a sort key on the o_order_date, queries leveraging that field as a predicate will return much faster.
 
-1. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used.
+1. Execute the following two queries noting the execution time of each.  The first query (Query A) is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure result cache cannot be used. But it can still compile cache.
+
+Query A
 ```
 select count(1), sum(o_totalprice)
 FROM orders
 WHERE o_orderdate between '1993-07-05' and '1993-07-07'
 ```
+Query B
 ```
 select count(1), sum(o_totalprice)
 FROM orders
 WHERE o_orderdate between '1993-07-07' and '1993-07-09'
 ```
-2. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used. You will notice the second query takes significantly longer than the second query in the previous step even though the number of rows which were aggregated is similar.  This is due to the first query's ability to take advantage of the Sort Key defined on the table.
+
+2. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used. You will notice the second query (Query D) takes significantly longer than the second query (Query B) in the previous step even though the number of rows which were aggregated is similar.  This is due to the Query B's ability to take advantage of the Sort Key defined on the table.
+
+Query C
 ```
 select count(1), sum(o_totalprice)
 FROM orders
 where o_orderkey < 450001
 ```
+Query D
 ```
 select count(1), sum(o_totalprice)
 FROM orders

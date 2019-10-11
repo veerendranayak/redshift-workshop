@@ -1,4 +1,4 @@
-# Lab 4 - Modernize Your Data Warehouse with Amazon Redshift Spectrum
+# Lab 3 - Modernize Your Data Warehouse with Amazon Redshift Spectrum
 
 In this lab, we show you how to query petabytes of data with Amazon Redshift and exabytes of data in your Amazon S3 data lake, without loading or moving objects. We will also demonstrate how you can leverage views which union data in direct attached storage as well as in your S3 Datalake to create a single source of truth.  Finally, we will demonstrate strategies for aging off old data into S3 and maintaining only the most recent data in Amazon Redshift direct attached storage.
 
@@ -15,8 +15,12 @@ https://console.aws.amazon.com/redshift/home?#query:
 ```
 
 In the first part of this lab, we will perform the following activities:
-* Load the Green company data for January 2016 into Redshift direct-attached storage (DAS) with COPY.
-* The CSV data is by month on Amazon S3. Here's a quick screenshot from the S3 console:
+* Load the Green company data for January 2016 from S3 into Redshift direct-attached storage (DAS) using COPY command
+* Build external data catalog to access CSV files located in S3
+* Compare Redshift local storage and external S3 storage queries
+
+
+First we will look at CSV data by month on Amazon S3. Here's a quick screenshot from the S3 console:
 ````
 https://s3.console.aws.amazon.com/s3/buckets/us-west-2.serverless-analytics/NYC-Pub/green/?region=us-west-2&tab=overview&prefixSearch=green_tripdata_2016
 ````
@@ -100,12 +104,13 @@ https://s3.console.aws.amazon.com/s3/buckets/serverless-analytics/canonical/NY-P
 
 
 ### Create external schema (and DB) for Redshift Spectrum
-Because external tables are stored in a shared Glue Catalog for use within the AWS ecosystem, they can be built and maintained using a few different tools, e.g. Athena, Redshift, and Glue.
+We will next use Glue and specifically Glue Crawlers to infer schemas from the files on S3 and store them in the Glue Catalog.  This will permit us to build external tables in Redshift for Redshift Spectrum to query.  The Glue catalog is used within the AWS ecosystem by a number of different services including Athena, Redshift Spectrum, Elastic Map Reduce (EMR), and Glue itself.
 
-* Use the AWS Glue Crawler to create your external table adb305.ny_pub stored in parquet format under location s3://us-west-2.serverless-analytics/canonical/NY-Pub/.
+
+* Use the AWS Glue Crawler to create your external table adb305.ny_pub stored in parquet format under location s3://us-west-2.serverless-analytics/canonical/NY-Pub.
 
 	1. Navigate to the **Glue Crawler Page**. https://console.aws.amazon.com/glue/home?#catalog:tab=crawlers
-	![](../images/crawler_0.png)
+	![](../images/crawler_0.png) NOTE: Ensure you remain in the Oregon Region. Th Region is indicated on the upper right of the AWS console.
 	1. Click on *Add Crawler*, and enter the crawler name *NYTaxiCrawler* and click *Next*.
 	![](../images/crawler_1.png)
 	1. Select *Data stores* as the source type and click *Next*.
@@ -119,6 +124,7 @@ Because external tables are stored in a shared Glue Catalog for use within the A
 	1. Click on *Add database* and enter the Database of *spectrumdb*
 	![](../images/crawler_6.png)
 	1. Select all remaining defaults. Once the Crawler has been created, click on *Run Crawler*.
+  You may see an AccessDeniedException error that can be ignored.
 	![](../images/crawler_7.png)
 	1. Once the Crawler has completed its run (approximate runtime - 3 mins), you will see a new table in the Glue Catalog. https://console.aws.amazon.com/glue/home?#catalog:tab=tables
 	![](../images/crawler_8.png)

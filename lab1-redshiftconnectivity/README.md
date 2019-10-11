@@ -26,7 +26,7 @@ In this lab you will install JDBC tool and setup connectivity .
   ![](../images/JDBCUrl.png)
   * Username - awsuser
   * Password - Shutterfly123
-  * Autocommit - Enabled
+  * Autocommit - enabled
   * Alternate Delimiter /  (forward slash)
 
 ![](../images/Connection.png)

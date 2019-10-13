@@ -9,8 +9,11 @@ Unlike a user-defined function (UDF), a stored procedure can incorporate data de
 In this lab, we will create stored procedure to perform deep copy.
 
 A deep copy recreates and repopulates a table by using a bulk insert, which automatically sorts the table. If a table has a large unsorted region, a deep copy is much faster than a vacuum.
+You may read more about deep copy options in the [documentation](https://docs.aws.amazon.com/redshift/latest/dg/performing-a-deep-copy.html) at a later time.  In this lab, we will be creating a stored procedure using the option that creates a temporary table and truncates the original table.
 
-Before creating stored procedure in SQL Workbench editor, we need to define an alternate delimiter such as a forward slash (/). In SQL Workbench, go to File-->connect window and for Redshift connection specify Alternate delimiter as /
+Before creating a stored procedure in SQL Workbench editor, we need to define an alternate delimiter such as a forward slash (/). In SQL Workbench, go to File-->connect window and for Redshift connection specify Alternate delimiter as /
+
+Next, run the code below to create a Redshift stored procedure called “deep_copy”.
 
 ````
 CREATE OR REPLACE PROCEDURE deep_copy(source_tab IN varchar(256))
@@ -26,7 +29,7 @@ $$ LANGUAGE plpgsql;
 
 ````
 
-Let's run copy command on Orders table to append data. Input data is sorted within single load but since we are inserting same data again, data across loads is no longer sorted in table.
+Let's run the Redshift COPY command on the Orders table to append data. Input data is sorted within single load when it is initially loaded, but since we are inserting additional data, the table is no longer sorted. See COPY#1 in screen print below
 ![](../images/sorted.png)
 
 ````
@@ -34,11 +37,11 @@ copy orders from 's3://redshift-immersionday-labs/data/orders/orders.tbl.'
 iam_role '[Your-Redshift_Role-ARN]'
 region 'us-west-2' lzop delimiter '|' ;
 ````
-To check tables with higher unsorted data, execute following query
+To check for tables with high amounts of unsorted data, execute the following query:
 ````
 SELECT * FROM svv_table_info where unsorted > 10
 ````
-we can run "Vacuum sort only orders" to resort the data but deep copy often faster than VACUUM. Let's execute stored procedure
+Note the “unsorted” result for the orders table shows a value higher than 10 indicating this table may be a good candidate for sorting either by using VACUUM, or by using our more efficient and faster deep_copy stored procedure. We can run "Vacuum sort only orders" to resort the data but deep copy often faster than VACUUM. Let's execute stored procedure
 
 ````
 call deep_copy('orders');
@@ -52,10 +55,11 @@ For Python UDFs, in addition to using the standard Python functionality, you can
 
 A scalar SQL UDF incorporates a SQL SELECT clause that executes when the function is called and returns a single value.
 
+### Creating a Scalar SQL UDF  
 The following example creates a SQL UDF that compares two integers and returns the larger value.
 
 ````
-create function f_sql_greater (float, float)
+create or replace function f_sql_greater (float, float)
   returns float
 stable
 as $$
@@ -65,7 +69,7 @@ as $$
 $$ language sql;
 /
 ````
-The following example queries join customer and orders table and calls the new f_py_greater function to return either account balance from customer table or total price from orders, whichever is greater.
+The following example query joins the customer and orders tables and calls the our new f_sql_greater function to return either the account balance from customer table or the total price from orders, whichever is greater.
 
 ````
 select c_custkey,c_name,o_orderkey,c_acctbal,o_totalprice,f_sql_greater(c_acctbal,o_totalprice)
@@ -75,13 +79,13 @@ and c_mktsegment ='BUILDING'
 and o_orderpriority='1-URGENT'
 and o_orderdate between '1993-07-05' and '1993-07-07' limit 10;
 ````
-Creating a Scalar Python UDF
-A scalar Python UDF incorporates a Python program that executes when the function is called and returns a single value
+### Creating a Scalar Python UDF
+Next, we will recreate a same greater-than functionality, but this time using a Scalar Python UDF which incorporates a Python program that executes when the function is called and returns a single value.
 
 The following example creates a Python UDF that compares two integers and returns the larger value.
 
 ````
-create function f_py_greater (a float, b float)
+create or replace function f_py_greater (a float, b float)
   returns float
 stable
 as $$

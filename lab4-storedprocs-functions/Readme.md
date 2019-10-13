@@ -1,6 +1,6 @@
 # Lab 4 - Stored Procedures and Functions
 
-Stored Procedures
+## Stored Procedures
 
 You can define an Amazon Redshift stored procedure using the PostgreSQL procedural language PL/pgSQL to perform a set of SQL queries and logical operations. The procedure is stored in the database and is available for any user with sufficient privileges to run.
 
@@ -31,8 +31,8 @@ Let's run copy command on Orders table to append data. Input data is sorted with
 
 ````
 copy orders from 's3://redshift-immersionday-labs/data/orders/orders.tbl.'
-iam_role 'arn:aws:iam::[Your-AWS_Account_Id]:role/[Your-Redshift-Role]'
-region 'us-west-2' lzop delimiter '|' COMPUPDATE PRESET;
+iam_role '[Your-Redshift_Role-ARN]'
+region 'us-west-2' lzop delimiter '|' ;
 ````
 To check tables with higher unsorted data, execute following query
 ````
@@ -44,13 +44,15 @@ we can run "Vacuum sort only orders" to resort the data but deep copy often fast
 call deep_copy('orders');
 ````
 
-User-Defined Functions
+##  User-Defined Functions
 
 You can create a custom user-defined scalar function (UDF) using either a SQL SELECT clause or a Python program. The new function is stored in the database and is available for any user with sufficient privileges to run, in much the same way as you run existing Amazon Redshift functions.
 
 For Python UDFs, in addition to using the standard Python functionality, you can import your own custom Python modules.
 
 A scalar SQL UDF incorporates a SQL SELECT clause that executes when the function is called and returns a single value.
+
+The following example creates a SQL UDF that compares two integers and returns the larger value.
 
 ````
 create function f_sql_greater (float, float)
@@ -63,13 +65,20 @@ as $$
 $$ language sql;
 /
 ````
-
+The following example queries join customer and orders table and calls the new f_py_greater function to return either account balance from customer table or total price from orders, whichever is greater.
 
 ````
-select f_sql_greater(l_discount,l_tax) from lineitem limit 10;
+select c_custkey,c_name,o_orderkey,c_acctbal,o_totalprice,f_sql_greater(c_acctbal,o_totalprice)
+from customer c, orders o
+where c.c_custkey=o.o_custkey
+and c_mktsegment ='BUILDING'
+and o_orderpriority='1-URGENT'
+and o_orderdate between '1993-07-05' and '1993-07-07' limit 10;
 ````
 Creating a Scalar Python UDF
 A scalar Python UDF incorporates a Python program that executes when the function is called and returns a single value
+
+The following example creates a Python UDF that compares two integers and returns the larger value.
 
 ````
 create function f_py_greater (a float, b float)
@@ -83,5 +92,10 @@ $$ language plpythonu;
 /
 ````
 ````
-select f_py_greater(l_discount,l_tax) from lineitem limit 10;
+select c_custkey,c_name,o_orderkey,c_acctbal,o_totalprice,f_py_greater(c_acctbal,o_totalprice)
+from customer c, orders o
+where c.c_custkey=o.o_custkey
+and c_mktsegment ='BUILDING'
+and o_orderpriority='1-URGENT'
+and o_orderdate between '1993-07-05' and '1993-07-07' limit 10;
 ````

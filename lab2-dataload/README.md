@@ -129,16 +129,31 @@ iam_role '[Your-Redshift-Role-ARN]'
 region 'us-west-2' lzop delimiter '|' ;
 ```
 In this lab we are using 4 dc2.large clusters nodes. The estimated time to load the data is as follows, note you can check timing information on actions in the performance and query tabs on the redshift console:
-* REGION (5 rows) - 20s
-* NATION (25 rows) - 20s
-*	CUSTOMER (15M rows) – 3m
-* ORDERS - (76M rows) - 1m
-* PART - (20M rows) - 4m
-*	SUPPLIER - (1M rows) - 1m
+* REGION (5 rows) - less than a second
+* NATION (25 rows) - less than a second
+*	CUSTOMER (15M rows) – 30 seconds
+* ORDERS - (76M rows) - 90 seconds
+* PART - (20M rows) - 30 seconds
+*	SUPPLIER - (1M rows) - 7 seconds
 
 Note: A few key takeaways from the above COPY statements.
 1. COPY for the REGION table points to a specfic file (region.tbl.lzo) while COPY for other tables point to a prefix to multiple files (lineitem.tbl.)
 2. COPY for the SUPPLIER table points a manifest file (supplier.json)
+
+Execute following query to get high level information about tables we just loaded.
+
+````
+select * from svv_table_info where schema='public' ;
+````
+How about getting count of customers from "Asia" REGION
+
+````
+SELECT COUNT(c_custkey)
+FROM customer c
+INNER JOIN nation n ON c.c_nationkey = n.n_nationkey
+INNER JOIN region r ON n.n_regionkey = r.r_regionkey
+WHERE r.r_name = 'ASIA';
+````
 
 ## Troubleshooting Loads
 There are two Amazon Redshift system tables that can be helpful in troubleshooting data load issues:
@@ -189,7 +204,7 @@ The COPY command chooses the compression encoding for each column if the target 
 
 Execute following query to review encoding column. You would notice compression being applied automatically.
 ````
-select * from pg_table_def where schemaname='public'
+select * from pg_table_def where schemaname='public';
 ````
 
 ## Review auto Analyze and auto Vacuum
@@ -203,7 +218,7 @@ Amazon Redshift also automatically performs a DELETE ONLY vacuum in the backgrou
 Running below statement will delete over 570 K records from supplier.
 
 ````
-delete from SUPPLIER where s_nationkey < 13;
+delete from supplier where s_nationkey < 13;
 ````
 
 After you run above command, Redshift will run auto analyze and vacuum delete to regenerate statistics and reclaim space. Screenshot below shows delete statement executed by user - "awsuser" and after some time, user -"rdsdb" running analyze and vacuum delete. The user name rdsdb is used internally by Amazon Redshift to perform routine administrative and maintenance tasks
@@ -215,7 +230,7 @@ Below query shows last executed queries on cluster for lineitem. The result will
 select pu.usename, qry.userid,query, rtrim(querytxt), starttime
 from stl_query qry,  pg_user pu
 where  qry.userid= pu.usesysid and querytxt like '%supplier%'
-order by starttime desc
+order by starttime desc;
 ````
 
 ## Redshift Advisor
@@ -230,7 +245,7 @@ There has not been enough activity on your cluster yet, so we will not be lookin
 Both Customer and Orders tables are  distributed by AUTO (EVEN). You can check distribution using below query
 
 ````
-select * from svv_table_info  where schema='public'
+select * from svv_table_info where "table" in ('customer','orders') ;
 ````
 
 But if your query access pattern frequently joins these two tables based on cust_key field, then Advisor will likely recommend to alter the distribution style to KEY and provide SQL for this change. This will co-locate similar number of rows on each node slice.
@@ -244,7 +259,7 @@ Run following query on tables with EVEN distribution.
 call this first performance test query, Query 1
 
 ````
-SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
+SELECT /* Query 1*/ c_mktsegment, COUNT(o_orderkey) AS orders_count,
 AVG(o_totalprice) AS medium_amount,
 SUM(o_totalprice) AS orders_revenue
 FROM orders o
@@ -252,12 +267,12 @@ INNER JOIN customer c ON o.o_custkey = c.c_custkey
 GROUP BY c_mktsegment;
 ````
 
-Let's create separate versions of Customers and Orders
+Let's create separate versions of Customers and Orders. Estimated run time less than 60 secs for each.
 ````
 create table orders_v as select * from orders;
 create table customer_v as select * from customer;
 ````
-Now we will assign a “key” distribution style to these new tables using the cust_key. This will immediately redistribute data amongst the nodes and slice.
+Now we will assign a “key” distribution style to these new tables using the cust_key. This will immediately redistribute data amongst the nodes and slice. Estimated run time less than 60 secs for each. Estimated run time less than 60 secs for each.
 
 ````
 alter table orders_v alter diststyle key distkey o_custkey;
@@ -266,7 +281,7 @@ alter table customer_v alter diststyle key distkey c_custkey;
 Running same select query on new set of tables
 Call this Query 2
 ````
-SELECT c_mktsegment, COUNT(o_orderkey) AS orders_count,
+SELECT /* Query 2 */ c_mktsegment, COUNT(o_orderkey) AS orders_count,
 AVG(o_totalprice) AS medium_amount,
 SUM(o_totalprice) AS orders_revenue
 FROM orders_v o
@@ -284,36 +299,35 @@ WHERE TRIM(querytxt) like '%customer%' and TRIM(querytxt) like '%orders%'
 ORDER BY starttime DESC
 LIMIT 2;
 ```
-
 ## Selective Filtering
-Redshift takes advantage of zone maps which allows the optimizer to skip reading blocks of data when it knows that the filter criteria will not be matched.  In the case of the orders_v1 table, because we have defined a sort key on the o_order_date, queries leveraging that field as a predicate will return much faster.
+Redshift takes advantage of zone maps which allows the optimizer to skip reading blocks of data when it knows that the filter criteria will not be matched.  In the case of the orders table, because we have defined a sort key on the o_orderdate, queries leveraging that field as a predicate will return much faster.
 
 1. Execute the following two queries noting the execution time of each.  The first query (Query A) is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure result cache cannot be used. But it can still compile cache.
 
 Query A
 ```
-select count(1), sum(o_totalprice)
+select /* Query A */count(1), sum(o_totalprice)
 FROM orders
-WHERE o_orderdate between '1993-07-05' and '1993-07-07'
+WHERE o_orderdate between '1993-07-05' and '1993-07-07';
 ```
 Query B
 ```
-select count(1), sum(o_totalprice)
+select /* Query B */count(1), sum(o_totalprice)
 FROM orders
-WHERE o_orderdate between '1993-07-07' and '1993-07-09'
+WHERE o_orderdate between '1993-07-07' and '1993-07-09';
 ```
 
 2. Execute the following two queries noting the execution time of each.  The first query is to ensure the plan is compiled.  The second has a slightly different filter condition to ensure the result cache cannot be used. You will notice the second query (Query D) takes significantly longer than the second query (Query B) in the previous step even though the number of rows which were aggregated is similar.  This is due to the Query B's ability to take advantage of the Sort Key defined on the table.
 
 Query C
 ```
-select count(1), sum(o_totalprice)
+select /* Query C */count(1), sum(o_totalprice)
 FROM orders
-where o_orderkey < 450001
+where o_orderkey between 451001 and 829001;
 ```
 Query D
 ```
-select count(1), sum(o_totalprice)
+select /* Query D */count(1), sum(o_totalprice)
 FROM orders
-where o_orderkey < 451001
+where o_orderkey between 458001 and 835001;
 ```
